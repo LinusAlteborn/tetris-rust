@@ -2,7 +2,7 @@ const COLORS: [char; 9] = ['⬛','🟦','🟨','🟪','🟩','🟥','🟫','🟧
 const BACKGROUND: [&str; 1] = [
     "NTI Moment",
 ];
-const ROWS: usize = 20;
+const ROWS: usize = 10;
 const COLUMNS: usize = 10;
 
 use std::io::{stdout, Write};
