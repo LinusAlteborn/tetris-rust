@@ -1,0 +1,9 @@
+{
+  "Difficulty": 5,
+  "color": "r",
+  "HighScore": [
+    { "name": "John", "score": 100 },
+    { "name": "Jane", "score": 200 },
+    { "name": "Jack", "score": 300 }
+  ]
+}
