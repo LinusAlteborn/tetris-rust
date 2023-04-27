@@ -32,7 +32,13 @@ impl Settings {
                 difficulty: json["Difficulty"].as_u32().unwrap(),
                 color: json["color"].as_str().unwrap().chars().nth(0).unwrap(),
             };
-            println!("{}", settings.difficulty);
+        let mut high_scores = Highscores {
+            users: vec![]
+        };
+        for x in json["HighScore"].members(){
+            high_scores.users.push(User {name: x["name"].to_string(), score: x["score"].as_u32().unwrap()})
+
+        }
         loop {
             if result == -1{
                 disable_raw_mode().unwrap();
