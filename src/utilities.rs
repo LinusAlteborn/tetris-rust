@@ -95,6 +95,15 @@ impl Shape {
                 ],
                 center: Point::from_pos(1.0, 0.0),
             },
+            Shape {
+                extent: vec![
+                    Point::from_pos(-1.0, 0.0),
+                    Point::from_pos(0.0, 0.0),
+                    Point::from_pos(1.0, 0.0),
+                    Point::from_pos(0.0, 1.0),
+                ],
+                center: Point::from_pos(1.0, 0.0),
+            },
         ]
     }
 

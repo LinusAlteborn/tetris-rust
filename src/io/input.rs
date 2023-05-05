@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use crossterm::event::{poll, read, Event};
 use crossterm::event::{KeyEvent, KeyEventKind, KeyCode};
+use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 
 #[derive(Debug)]
 pub enum InputEvent {
@@ -25,7 +26,8 @@ impl Input {
     }
 
     pub fn poll(&self) -> Option<InputEvent> {
-        if poll(Duration::from_millis(100)).unwrap() {
+        enable_raw_mode().unwrap();
+        if poll(Duration::from_millis(0)).unwrap() {
             match read().unwrap() {
                 Event::Key(KeyEvent{kind: KeyEventKind::Press, code, ..}) => match code {
                     KeyCode::Char(' ') | KeyCode::Backspace => Some(InputEvent::Drop),
