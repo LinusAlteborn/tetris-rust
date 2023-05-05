@@ -1,9 +1,1 @@
-{
-  "Difficulty": 5,
-  "color": "r",
-  "HighScore": [
-    { "name": "John", "score": 100 },
-    { "name": "Jane", "score": 200 },
-    { "name": "Jack", "score": 300 }
-  ]
-}
+{"difficulty":2,"color":"r","highscore":[{"name":"Jack","score":300},{"name":"Jane","score":200},{"name":"John","score":100},{"name":"Carl","score":20},{"name":"Carl","score":20}]}
