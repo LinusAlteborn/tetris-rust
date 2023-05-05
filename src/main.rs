@@ -2,13 +2,9 @@ use tetris::{*, io::input::InputEvent};
 use std::time::{Duration};
 use crossterm::event::{read, Event, KeyCode};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
-use crossterm::{cursor, terminal, ExecutableCommand, Result};
-use device_query::{DeviceQuery, DeviceState, Keycode};
-use std::io::{stdout, Write};
+use std::io::{ Write};
 use std::fs;
-use json::{object,array, JsonValue};
-use std::fs::File;
-use std::io::prelude::*;
+use json::{object};
 use std::io;
 
 
