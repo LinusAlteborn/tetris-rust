@@ -1,5 +1,5 @@
-use tetris::{*, io::input::InputEvent};
-use std::time::{Duration};
+use std::time::Duration;
+use tetris::{io::input::InputEvent, *};
 
 fn main() {
     let mut system = System::new();
@@ -19,7 +19,7 @@ fn main() {
             },
             None => (),
         }
-        
+
         system.check_move_timer();
 
         for loop_event in system.events.drain(..) {
@@ -31,9 +31,9 @@ fn main() {
                 _ => (),
             }
         }
-        
+
         system.output.update(&system.data);
-        
+
         fps.frame();
     }
 }

@@ -1,33 +1,45 @@
-use std::io::stdout;
+use std::io::{stdout, Write};
 
-use crossterm::{
-    execute,
-    cursor::{Hide, MoveTo},
-};
+use crossterm::{execute, Result};
+use crossterm::cursor::{Hide, MoveTo};
+use crossterm::style::{Print, SetForegroundColor, SetBackgroundColor, ResetColor, Color, Attribute};
 
 use crate::*;
 
-pub const COLORS: [&str;7] = ["  ","🟥","🟦","🟧","🟨","🟩","🟪"];
+pub const COLORS: [Color;7] = [Color::Black, Color::Blue, Color::Cyan, Color::Green, Color::Magenta, Color::Red, Color::Yellow];
+pub const BLOCK_WIDTH: usize = 2;
+
+#[derive(Copy, Clone)]
+pub struct Cell{
+    text: &'static str,
+    color: Color,
+}
+
+impl Cell {
+    fn from_color(color: Color) -> Cell {
+        Cell {
+            text: "   ",
+            color,
+        }
+    }
+}
 
 pub struct Output {
-    cells: [[&'static str;COLUMNS];ROWS],
+    cells: [[Cell;COLUMNS];ROWS],
 }
 
 impl Output {
     pub fn new() -> Output {
-        execute!(stdout(), Hide).unwrap();
+        execute!(stdout(), Hide, SetForegroundColor(Color::Blue)).unwrap();
         Output {
-            cells: [["  ";COLUMNS];ROWS],
+            cells: [[Cell::from_color(COLORS[0]);COLUMNS];ROWS],
         }
     }
 
     pub fn update(&mut self, data: &Data) {
         for (y, row) in data.grid.iter().enumerate() {
             for (x, cell) in row.iter().enumerate() {
-                self.cells[y][x] = match cell {
-                    0 => "  ",
-                    color => COLORS[*color],
-                }
+                self.cells[y][x] = Cell::from_color(COLORS[*cell])
             }
         }
 
@@ -36,7 +48,7 @@ impl Output {
             let x = point.x as usize;
             let y = point.y as usize;
             if x < COLUMNS && y < ROWS {
-                self.cells[y][x] = COLORS[data.color];
+                self.cells[y][x] = Cell::from_color(COLORS[data.color]);
             }
         }
 
@@ -44,14 +56,12 @@ impl Output {
     }
     
     fn draw(&self) {
-        execute!(stdout(), MoveTo(0, 0)).unwrap();
-        let mut out = String::from("");
         for row in 0..ROWS {
             for col in 0..COLUMNS {
-                out.push_str(self.cells[row][col]);
+                execute!(stdout(), MoveTo(col as u16 * BLOCK_WIDTH as u16, row as u16), SetBackgroundColor(self.cells[row][col].color)).unwrap();
+                print!("{:.2}", self.cells[row][col].text);
             }
-            out.push('\n');
         }
-        print!("{out}");
+        execute!(stdout(), ResetColor).unwrap();
     }
 }
