@@ -7,9 +7,6 @@ use std::fs;
 use json::{object};
 use std::io;
 
-
-
-
 #[derive(Clone, Copy)]
 struct Settings {
     difficulty: u32,

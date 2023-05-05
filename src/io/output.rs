@@ -2,6 +2,7 @@ use std::io::{stdout, Write};
 
 use crossterm::{execute, Result};
 use crossterm::cursor::{Hide, MoveTo};
+use crossterm::terminal::{SetSize, SetTitle};
 use crossterm::style::{Print, SetForegroundColor, SetBackgroundColor, ResetColor, Color, Attribute};
 
 use crate::*;
