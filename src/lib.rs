@@ -75,7 +75,7 @@ impl System {
         self.collision_with_extent(&self.new_extent(delta))
     }
 
-    fn rows_with_tetris(&self) -> Vec<usize> {
+    fn find_rows_with_tetris(&self) -> Vec<usize> {
         let mut rows = Vec::new();
         for point in self.data.shape.to_world_pos(self.data.pos) {
             let y = point.y as usize;
@@ -89,7 +89,7 @@ impl System {
     }
 
     fn check_for_tetris(&mut self) {
-        let rows = self.rows_with_tetris();
+        let rows = self.find_rows_with_tetris();
         if rows.len() == 0 {return};
         let mut jump_length = 0;
         for row in (0..=rows[0]).rev() {
@@ -98,6 +98,9 @@ impl System {
                 continue;
             }
             self.data.grid[row + jump_length] = self.data.grid[row];
+        }
+        for row in 0..jump_length {
+            self.data.grid[row] = [0;COLUMNS];
         }
     }
 
