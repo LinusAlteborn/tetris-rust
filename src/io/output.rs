@@ -9,7 +9,7 @@ use crossterm::style::{SetForegroundColor, SetBackgroundColor, ResetColor, Color
 use crate::*;
 
 pub const COLORS: [Color;7] = [Color::Black, Color::Blue, Color::Cyan, Color::Green, Color::Magenta, Color::Red, Color::Yellow];
-pub const BLOCK_WIDTH: usize = 4;
+pub const BLOCK_WIDTH: usize = 5;
 pub const BLOCK_HEIGHT: usize = 2;
 
 #[derive(Copy, Clone)]
@@ -22,15 +22,16 @@ impl Cell {
     fn from_color(color: Color) -> Cell {
         Cell {
             text: if color == Color::Black {
-                ["    ";BLOCK_HEIGHT]
+                ["      ";BLOCK_HEIGHT]
             }else {
-                ["    ";BLOCK_HEIGHT]
+                ["      ";BLOCK_HEIGHT]
             },
             color,
         }
     }
 }
 
+#[derive(PartialEq, Eq)]
 enum Instruction {
     MoveTo(usize, usize),
     ChangeColor(Color),
@@ -116,9 +117,9 @@ impl Output {
                 }
                 for x in 0..COLUMNS {
                     self.instructions.push(Instruction::MoveTo(x * BLOCK_WIDTH + 1 + self.offset, 0));
-                    self.instructions.push(Instruction::Print("------"));
+                    self.instructions.push(Instruction::Print("----------"));
                     self.instructions.push(Instruction::MoveTo(x * BLOCK_WIDTH + 1 + self.offset, ROWS * BLOCK_HEIGHT + 1));
-                    self.instructions.push(Instruction::Print("------"));
+                    self.instructions.push(Instruction::Print("----------"));
                 }
             }
         }
