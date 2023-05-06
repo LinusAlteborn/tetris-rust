@@ -56,7 +56,7 @@ pub struct Output {
     cells: [[Cell;COLUMNS];ROWS],
     cells_mem: [[Cell;COLUMNS];ROWS],
     offset: usize,
-    size: (u16, u16),
+    instant: Instant,
     instructions: Vec<Instruction>,
 }
 
@@ -69,16 +69,16 @@ impl Output {
             cells: [[Cell::from_color(COLORS[0]);COLUMNS];ROWS],
             cells_mem: [[Cell::from_color(COLORS[1]);COLUMNS];ROWS],
             offset,
-            size: (width, height),
+            instant: Instant::now(),
             instructions: vec![],
         }
     }
 
-    fn check_for_size_change(&mut self) {
-        let new_size = terminal::size().unwrap();
-        if self.size != new_size {
-            println!("Size changed");
-            self.size = new_size;
+    fn check_for_full_update(&mut self) {
+        if self.instant.elapsed().as_millis() > 1500 {
+            let instructions_by_color = self.instruction_by_color();
+            self.fill_instructions(instructions_by_color);
+            self.instant = Instant::now();
         }
     }
 
@@ -191,6 +191,8 @@ impl Output {
         let changes = self.cell_changes();
         let new_instrctions = self.changes_to_instructions(changes);
         self.instructions = new_instrctions;
+
+        self.check_for_full_update();
 
         self.use_instructions();
     }
