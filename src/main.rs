@@ -1,6 +1,6 @@
 use tetris::{*, io::input::InputEvent};
 use std::time::{Duration};
-use crossterm::event::{read, Event, KeyCode};
+use crossterm::event::{read, Event, KeyCode, KeyEventKind};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use std::io::{ Write};
 use std::fs;
@@ -64,12 +64,16 @@ impl Settings {
                     "Welcome to Tetris\n\nPress 1. to play\nPress 2. for settings\nPress 3. for highscore"
                 );
                 enable_raw_mode().unwrap();
-                if let Event::Key(key) = read().unwrap() {
-                    match key.code {
-                        KeyCode::Char('1') => result = 1,
-                        KeyCode::Char('2') => result = 2,
-                        KeyCode::Char('3') => result = 3,
-                        _ => (),
+                result = loop {
+                    if let Event::Key(key) = read().unwrap() {
+                        if key.kind == KeyEventKind::Press{
+                            match key.code {
+                                KeyCode::Char('1') => break 1,
+                                KeyCode::Char('2') => break 2,
+                                KeyCode::Char('3') => break 3,
+                                _ => (),
+                            }
+                        }
                     }
                 }
             }
@@ -90,48 +94,59 @@ impl Settings {
                         settings_result = 0;
                     } else if settings_result == 0 {
                         enable_raw_mode().unwrap();
-                        if let Event::Key(key) = read().unwrap() {
-                            match key.code {
-                                KeyCode::Char('1') => settings_result = 1,
-                                KeyCode::Char('2') => settings_result = 2,
-                                KeyCode::Char('3') => break,
-                                _ => (),
+                        settings_result = loop {
+                            if let Event::Key(key) = read().unwrap() {
+                                if key.kind == KeyEventKind::Press{
+                                    match key.code {
+                                        KeyCode::Char('1') => break 1,
+                                        KeyCode::Char('2') => break 2,
+                                        KeyCode::Char('3') => break 3,
+                                        _ => (),
+                                    }
+                                }
                             }
+                        };
+                        if settings_result == 3{
+                            break;
                         }
                         disable_raw_mode().unwrap();
                     }
                     if settings_result == 1 {
                         println!("Set difficulty in the range 1-9");
                         enable_raw_mode().unwrap();
-                        let mut difficulty: Option<char> = None;
-                        if let Event::Key(key) = read().unwrap() {
-                            match key.code {
-                                KeyCode::Char(event) => {
-                                    if event.is_digit(10) {
-                                        difficulty = Some(event);
+                        let difficulty = loop {
+                            if let Event::Key(key) = read().unwrap() {
+                                if key.kind == KeyEventKind::Press{
+                                    match key.code {
+                                        KeyCode::Char(event) => {
+                                            if event.is_digit(10) {
+                                                break event.to_digit(10).unwrap();
+                                            }
+                                        }
+                                        _ => (),
                                     }
                                 }
-                                _ => (),
                             }
-                        }
+                        };
                         settings_result = -1;
                         disable_raw_mode().unwrap();
-                        settings.difficulty = difficulty.unwrap().to_digit(10).unwrap();
+                        settings.difficulty = difficulty;
                     }
                     if settings_result == 2 {
                         println!("Set color");
                         enable_raw_mode().unwrap();
-                        let mut color: Option<char> = None; 
-                        if let Event::Key(key) = read().unwrap() {
-                            match key.code {
-                                KeyCode::Char('r') => color = Some('r'),
-                                KeyCode::Char('b') => color = Some('b'),
-                                _ => (),
+                        let color = loop {
+                            if let Event::Key(key) = read().unwrap() {
+                                match key.code {
+                                    KeyCode::Char('r') => break 'r',
+                                    KeyCode::Char('b') => break 'b',
+                                    _ => (),
+                                }
                             }
-                        }
+                        };
                         settings_result = -1;
                         disable_raw_mode().unwrap();
-                        settings.color = color.unwrap()
+                        settings.color = color
                     }
                 }
                 result = -1;
@@ -143,12 +158,16 @@ impl Settings {
                 }
                 println!("\nPress any key to exit:");
                 enable_raw_mode().unwrap();
-                if let Event::Key(key) = read().unwrap() {
-                    match key.code {
-                        KeyCode::Char(_event) => result = -1,
-                        _ => (),
+                result = loop {
+                    if let Event::Key(key) = read().unwrap() {
+                        if key.kind == KeyEventKind::Press{
+                            match key.code {
+                                KeyCode::Char(_event) => break -1,
+                                _ => (),
+                            }
+                        }
                     }
-                }
+                };
                 disable_raw_mode().unwrap();
             }
 
