@@ -21,7 +21,11 @@ pub struct Cell{
 impl Cell {
     fn from_color(color: Color) -> Cell {
         Cell {
-            text: ["     ";BLOCK_HEIGHT],
+            text: if color == Color::Black {
+                ["    ";BLOCK_HEIGHT]
+            }else {
+                ["    ";BLOCK_HEIGHT]
+            },
             color,
         }
     }
@@ -53,7 +57,7 @@ pub struct Output {
 
 impl Output {
     pub fn new() -> Output {
-        execute!(stdout(), Hide, SetForegroundColor(Color::Blue), Clear(ClearType::FromCursorDown)).unwrap();
+        execute!(stdout(), Hide, MoveTo(0, 0), Clear(ClearType::FromCursorDown)).unwrap();
         Output {
             cells: [[Cell::from_color(COLORS[0]);COLUMNS];ROWS],
             instructions: vec![],
@@ -84,7 +88,7 @@ impl Output {
             for (x, cell) in row.iter().enumerate() {
                 let instructions = instruction_by_color.entry(cell.color).or_insert(vec![]);
                 for row in 0..BLOCK_HEIGHT {
-                    instructions.push(Instruction::MoveTo(x * BLOCK_WIDTH, y * BLOCK_HEIGHT + row));
+                    instructions.push(Instruction::MoveTo(x * BLOCK_WIDTH + 1, y * BLOCK_HEIGHT + row + 1));
                     instructions.push(Instruction::Print(cell.text[row]));
                 }
             }
@@ -99,6 +103,20 @@ impl Output {
             for instruction in instructions {
                 self.instructions.push(instruction);
             }
+            if color == COLORS[0] {
+                for y in 1..ROWS * BLOCK_HEIGHT + 1 {
+                    self.instructions.push(Instruction::MoveTo(COLUMNS * BLOCK_WIDTH + 1, y));
+                    self.instructions.push(Instruction::Print("|"));
+                    self.instructions.push(Instruction::MoveTo(0, y));
+                    self.instructions.push(Instruction::Print("|"));
+                }
+                for x in 0..COLUMNS {
+                    self.instructions.push(Instruction::MoveTo(x * BLOCK_WIDTH + 1, 0));
+                    self.instructions.push(Instruction::Print("------"));
+                    self.instructions.push(Instruction::MoveTo(x * BLOCK_WIDTH + 1, ROWS * BLOCK_HEIGHT + 1));
+                    self.instructions.push(Instruction::Print("------"));
+                }
+            }
         }
     }
 
@@ -111,9 +129,10 @@ impl Output {
     }
     
     fn use_instructions(&mut self) {
+        execute!(stdout(), SetForegroundColor(Color::DarkGrey), Hide).unwrap();
         for instruction in self.instructions.drain(..) {
             instruction.perform().unwrap();
         }
-        execute!(stdout(), ResetColor, MoveTo((COLUMNS * BLOCK_WIDTH) as u16, (ROWS * BLOCK_HEIGHT) as u16)).unwrap();
+        execute!(stdout(), ResetColor, Hide, MoveTo((COLUMNS * BLOCK_WIDTH + 2) as u16, (ROWS * BLOCK_HEIGHT + 1) as u16)).unwrap();
     }
 }
