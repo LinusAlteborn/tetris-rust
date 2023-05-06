@@ -112,6 +112,9 @@ impl System {
                 _ => (),
             }
         } else {
+            if let Move::Translate(Point {x: 0.0, y:1.0}) = delta {
+                self.reset_move_timer();
+            }
             self.do_move(delta);
         }
     }
