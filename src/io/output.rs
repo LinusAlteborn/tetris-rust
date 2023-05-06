@@ -1,3 +1,4 @@
+use std::hash::Hash;
 use std::io::stdout;
 use std::collections::HashMap;
 
@@ -9,7 +10,7 @@ use crossterm::style::{SetForegroundColor, SetBackgroundColor, ResetColor, Color
 use crate::*;
 
 pub const COLORS: [Color;7] = [Color::Black, Color::Blue, Color::Cyan, Color::Green, Color::Magenta, Color::Red, Color::Yellow];
-pub const BLOCK_WIDTH: usize = 5;
+pub const BLOCK_WIDTH: usize = 4;
 pub const BLOCK_HEIGHT: usize = 2;
 
 #[derive(Copy, Clone)]
@@ -53,7 +54,9 @@ impl Instruction {
 
 pub struct Output {
     cells: [[Cell;COLUMNS];ROWS],
+    cells_mem: [[Cell;COLUMNS];ROWS],
     offset: usize,
+    size: (u16, u16),
     instructions: Vec<Instruction>,
 }
 
@@ -64,12 +67,23 @@ impl Output {
         execute!(stdout(), Hide, MoveTo(0, 0), Clear(ClearType::FromCursorDown), SetSize(width, height)).unwrap();
         Output {
             cells: [[Cell::from_color(COLORS[0]);COLUMNS];ROWS],
+            cells_mem: [[Cell::from_color(COLORS[1]);COLUMNS];ROWS],
             offset,
+            size: (width, height),
             instructions: vec![],
         }
     }
 
+    fn check_for_size_change(&mut self) {
+        let new_size = terminal::size().unwrap();
+        if self.size != new_size {
+            println!("Size changed");
+            self.size = new_size;
+        }
+    }
+
     fn update_cells(&mut self, data: &Data) {
+        self.cells_mem = self.cells;
         for (y, row) in data.grid.iter().enumerate() {
             for (x, cell) in row.iter().enumerate() {
                 self.cells[y][x] = Cell::from_color(COLORS[*cell])
@@ -125,10 +139,58 @@ impl Output {
         }
     }
 
+    fn cell_changes(&self) -> Vec<(usize, usize)> {
+        let mut changes = Vec::new();
+        for y in 0..ROWS {
+            for x in 0..COLUMNS {
+                if self.cells[y][x].color != self.cells_mem[y][x].color {
+                    changes.push((x, y));
+                }
+            }
+        }
+        changes
+    }
+
+    fn changes_to_instructions(&self, changes: Vec<(usize, usize)>) -> Vec<Instruction> {
+        let mut instructions_by_color = HashMap::new();
+        for (x, y) in changes {
+            let cell = self.cells[y][x];
+            let instructions = instructions_by_color.entry(cell.color).or_insert(vec![Instruction::ChangeColor(cell.color)]);
+            for row in 0..BLOCK_HEIGHT {
+                instructions.push(Instruction::MoveTo(x * BLOCK_WIDTH + 1 + self.offset, y * BLOCK_HEIGHT + row + 1));
+                instructions.push(Instruction::Print(cell.text[row]));
+            }
+        }
+
+        let mut out = Vec::new();
+        for (color, instructions) in instructions_by_color {
+            out.push(Instruction::ChangeColor(color));
+            for instruction in instructions {
+                out.push(instruction);
+            }
+        }
+        out.push(Instruction::ChangeColor(COLORS[0]));
+        for y in 1..ROWS * BLOCK_HEIGHT + 1 {
+            out.push(Instruction::MoveTo(COLUMNS * BLOCK_WIDTH + 1 + self.offset, y));
+            out.push(Instruction::Print("|"));
+            out.push(Instruction::MoveTo(0 + self.offset, y));
+            out.push(Instruction::Print("|"));
+        }
+        for x in 0..COLUMNS {
+            out.push(Instruction::MoveTo(x * BLOCK_WIDTH + 1 + self.offset, 0));
+            out.push(Instruction::Print("----------"));
+            out.push(Instruction::MoveTo(x * BLOCK_WIDTH + 1 + self.offset, ROWS * BLOCK_HEIGHT + 1));
+            out.push(Instruction::Print("----------"));
+        }
+
+        out
+    }
+
     pub fn update(&mut self, data: &Data) {
         self.update_cells(data);
-        let instructions_by_color = self.instruction_by_color();
-        self.fill_instructions(instructions_by_color);
+        let changes = self.cell_changes();
+        let new_instrctions = self.changes_to_instructions(changes);
+        self.instructions = new_instrctions;
 
         self.use_instructions();
     }
