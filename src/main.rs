@@ -187,7 +187,7 @@ impl Settings {
 }
 
 fn main() {
-    Settings::start();
+    Settings::start().unwrap();
     let mut system = System::new();
     let mut fps = Fps::new(Duration::from_millis(1000));
     loop {

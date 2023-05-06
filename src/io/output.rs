@@ -1,9 +1,9 @@
 use std::io::stdout;
 use std::collections::HashMap;
 
-use crossterm::{execute, Result};
+use crossterm::{execute, Result, terminal};
 use crossterm::cursor::{Hide, MoveTo};
-use crossterm::terminal::{Clear, ClearType};
+use crossterm::terminal::{Clear, ClearType, SetSize};
 use crossterm::style::{SetForegroundColor, SetBackgroundColor, ResetColor, Color};
 
 use crate::*;
@@ -52,14 +52,18 @@ impl Instruction {
 
 pub struct Output {
     cells: [[Cell;COLUMNS];ROWS],
+    offset: usize,
     instructions: Vec<Instruction>,
 }
 
 impl Output {
     pub fn new() -> Output {
-        execute!(stdout(), Hide, MoveTo(0, 0), Clear(ClearType::FromCursorDown)).unwrap();
+        let (width, height) = Self::min_size();
+        let offset = Self::offset(width);
+        execute!(stdout(), Hide, MoveTo(0, 0), Clear(ClearType::FromCursorDown), SetSize(width, height)).unwrap();
         Output {
             cells: [[Cell::from_color(COLORS[0]);COLUMNS];ROWS],
+            offset,
             instructions: vec![],
         }
     }
@@ -88,7 +92,7 @@ impl Output {
             for (x, cell) in row.iter().enumerate() {
                 let instructions = instruction_by_color.entry(cell.color).or_insert(vec![]);
                 for row in 0..BLOCK_HEIGHT {
-                    instructions.push(Instruction::MoveTo(x * BLOCK_WIDTH + 1, y * BLOCK_HEIGHT + row + 1));
+                    instructions.push(Instruction::MoveTo(x * BLOCK_WIDTH + 1 + self.offset, y * BLOCK_HEIGHT + row + 1));
                     instructions.push(Instruction::Print(cell.text[row]));
                 }
             }
@@ -105,15 +109,15 @@ impl Output {
             }
             if color == COLORS[0] {
                 for y in 1..ROWS * BLOCK_HEIGHT + 1 {
-                    self.instructions.push(Instruction::MoveTo(COLUMNS * BLOCK_WIDTH + 1, y));
+                    self.instructions.push(Instruction::MoveTo(COLUMNS * BLOCK_WIDTH + 1 + self.offset, y));
                     self.instructions.push(Instruction::Print("|"));
-                    self.instructions.push(Instruction::MoveTo(0, y));
+                    self.instructions.push(Instruction::MoveTo(0 + self.offset, y));
                     self.instructions.push(Instruction::Print("|"));
                 }
                 for x in 0..COLUMNS {
-                    self.instructions.push(Instruction::MoveTo(x * BLOCK_WIDTH + 1, 0));
+                    self.instructions.push(Instruction::MoveTo(x * BLOCK_WIDTH + 1 + self.offset, 0));
                     self.instructions.push(Instruction::Print("------"));
-                    self.instructions.push(Instruction::MoveTo(x * BLOCK_WIDTH + 1, ROWS * BLOCK_HEIGHT + 1));
+                    self.instructions.push(Instruction::MoveTo(x * BLOCK_WIDTH + 1 + self.offset, ROWS * BLOCK_HEIGHT + 1));
                     self.instructions.push(Instruction::Print("------"));
                 }
             }
@@ -127,12 +131,25 @@ impl Output {
 
         self.use_instructions();
     }
+
+    fn min_size() -> (u16, u16) {
+        let (width, height) = terminal::size().unwrap();
+        let min_width = (COLUMNS * BLOCK_WIDTH + 2) as u16;
+        let min_height = (ROWS * BLOCK_HEIGHT + 3) as u16;
+        let width = if width > min_width { width } else { min_width };
+        let height = if height > min_height { height } else { min_height };
+        (width, height)
+    }
     
+    fn offset(width: u16) -> usize {
+        (width as usize - (COLUMNS * BLOCK_WIDTH + 2)) / 2
+    }
+
     fn use_instructions(&mut self) {
         execute!(stdout(), SetForegroundColor(Color::DarkGrey), Hide).unwrap();
         for instruction in self.instructions.drain(..) {
             instruction.perform().unwrap();
         }
-        execute!(stdout(), ResetColor, Hide, MoveTo((COLUMNS * BLOCK_WIDTH + 2) as u16, (ROWS * BLOCK_HEIGHT + 1) as u16)).unwrap();
+        execute!(stdout(), ResetColor, Hide, MoveTo((COLUMNS * BLOCK_WIDTH + 2 + self.offset) as u16, (ROWS * BLOCK_HEIGHT + 1) as u16)).unwrap();
     }
 }
