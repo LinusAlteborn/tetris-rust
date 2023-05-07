@@ -104,6 +104,68 @@ impl Shape {
                 ],
                 center: Point::from_pos(1.0, 0.0),
             },
+            Shape {
+                extent: vec![
+                    Point::from_pos(-1.0, 1.0),
+                    Point::from_pos(0.0, 1.0),
+                    Point::from_pos(1.0, 1.0),
+                    Point::from_pos(0.0, 0.0),
+                    Point::from_pos(0.0, -1.0),
+                ],
+                center: Point::from_pos(0.0, 1.0),
+            },
+            Shape {
+                extent: vec![
+                    Point::from_pos(-0.5, -0.5),
+                    Point::from_pos(0.5, -0.5),
+                    Point::from_pos(1.5, -0.5),
+                    Point::from_pos(-0.5, 0.5),
+                    Point::from_pos(0.5, 0.5),
+                ],
+                center: Point::from_pos(0.5, 0.5),
+            },
+            Shape {
+                extent: vec![
+                    Point::from_pos(-0.5, -0.5),
+                    Point::from_pos(0.5, -0.5),
+                    Point::from_pos(1.5, 0.5),
+                    Point::from_pos(-0.5, 0.5),
+                    Point::from_pos(0.5, 0.5),
+                ],
+                center: Point::from_pos(0.5, 0.5),
+            },
+            Shape {
+                extent: vec![
+                    Point::from_pos(-1.0, -1.0),
+                    Point::from_pos(0.0, -1.0),
+                    Point::from_pos(1.0, -1.0),
+                    Point::from_pos(-1.0, 0.0),
+                    Point::from_pos(1.0, 0.0),
+                    Point::from_pos(-1.0, 1.0),
+                    Point::from_pos(1.0, 1.0),
+                ],
+                center: Point::from_pos(1.0, 1.0),
+            },
+            Shape {
+                extent: vec![
+                    Point::from_pos(-1.0, 0.0),
+                    Point::from_pos(0.0, 0.0),
+                    Point::from_pos(1.0, 0.0),
+                    Point::from_pos(-1.0, 1.0),
+                    Point::from_pos(1.0, 1.0),
+                ],
+                center: Point::from_pos(1.0, 0.0),
+            },
+            Shape {
+                extent: vec![
+                    Point::from_pos(-2.0, 0.0),
+                    Point::from_pos(-1.0, 0.0),
+                    Point::from_pos(0.0, 0.0),
+                    Point::from_pos(1.0, 0.0),
+                    Point::from_pos(2.0, 0.0),
+                ],
+                center: Point::from_pos(2.0, 0.0),
+            },
         ]
     }
 
