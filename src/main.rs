@@ -7,12 +7,20 @@ use std::fs;
 use json::{object};
 use std::io;
 
+/// Stores all of settings for the session
+/// 
+/// The struct stores a difficulty which has the range of 1-9
+/// and a color which is a char
+
 #[derive(Clone, Copy)]
 struct Settings {
     difficulty: u32,
     color: char,
 }
 
+/// Stores a user with an assisted score and name
+/// 
+/// The struct stores a name as a string and a number as u32
 #[derive(Clone)]
 struct User {
     name: String,
@@ -21,6 +29,17 @@ struct User {
 
 
 impl User{
+    /// Creates a new user
+    /// 
+    /// Creates a new user given a name and gives it the starting score 0
+    ///  
+    /// Arguments:
+    /// 
+    /// name: A string is the users name
+    /// 
+    /// Output:
+    /// 
+    /// A new instance of the struct User
     fn add_user(name : String) -> Self{
         Self{
             name: name,
@@ -38,7 +57,25 @@ struct Highscores {
     users: Vec<User>
 }
 
+
+/// Methods for Highscores
 impl Highscores{
+
+    /// append adds a new user to the Highscore structs user vec
+    /// 
+    /// This out of place method creates a new Highscore struct with the added user.
+    /// If there are more than 10 users in the struct it will compare the new user
+    /// to the user which has lowest score and if it has higher it will remove that user.
+    /// Then will it sort the vec.
+    /// 
+    /// Arguments:
+    /// 
+    /// self: which is the struct which is calling this method
+    /// user: which holds the struct user that stores a score and a name
+    /// 
+    /// Output:
+    /// 
+    /// A new instance of the struct Highscore
     fn append(&mut self, user: User) -> Self{
         let length = self.users.len();
         if self.users.iter().min_by_key(|x| x.score).unwrap_or(&User{score:0, name: "".to_string()}).score < user.score || length <= 10 {
