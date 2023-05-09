@@ -1,8 +1,21 @@
-use std::ops::{Add, Sub};
+use crossterm::{
+    cursor::{MoveTo, RestorePosition, SavePosition},
+    execute,
+};
 pub use rand::{thread_rng, Rng};
+use std::io::stdout;
+use std::ops::{Add, Sub};
 use std::time::{Duration, Instant};
 
 use crate::COLUMNS;
+
+pub fn display_score(score: u32) {
+    execute!(stdout(), SavePosition, MoveTo(0, 5)).unwrap();
+
+    print!("Score: {}", score);
+
+    execute!(stdout(), RestorePosition).unwrap();
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct Point {
@@ -12,7 +25,7 @@ pub struct Point {
 
 impl Point {
     pub fn from_pos(x: f32, y: f32) -> Point {
-        Point { x, y, }
+        Point { x, y }
     }
 }
 
@@ -20,7 +33,10 @@ impl Add for Point {
     type Output = Point;
 
     fn add(self, other: Self) -> Point {
-        Self {x: self.x + other.x, y: self.y + other.y}
+        Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
     }
 }
 
@@ -28,7 +44,10 @@ impl Sub for Point {
     type Output = Point;
 
     fn sub(self, other: Self) -> Point {
-        Self {x: self.x - other.x, y: self.y - other.y}
+        Self {
+            x: self.x - other.x,
+            y: self.y - other.y,
+        }
     }
 }
 
@@ -170,7 +189,7 @@ impl Shape {
     }
 
     pub fn get_spawn_pos(&self) -> Point {
-        Point::from_pos((COLUMNS  / 2 - self.center.x as usize) as f32 - 1.0, 0.0)
+        Point::from_pos((COLUMNS / 2 - self.center.x as usize) as f32 - 1.0, 0.0)
     }
 
     pub fn rotated(&self, delta: i32) -> Shape {
@@ -221,7 +240,10 @@ impl Fps {
     pub fn frame(&mut self) {
         self.frames += 1;
         if self.time.elapsed() >= self.measurement_time {
-            println!("fps: {}", (self.frames as u128 * 1000)/(self.time.elapsed().as_millis()));
+            println!(
+                "fps: {}",
+                (self.frames as u128 * 1000) / (self.time.elapsed().as_millis())
+            );
             self.reset();
         }
     }

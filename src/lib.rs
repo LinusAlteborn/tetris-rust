@@ -1,10 +1,12 @@
-use std::time::{Instant, Duration};
+use std::time::{Duration, Instant};
 
+mod menu;
 mod utilities;
 
+pub use menu::*;
 pub use utilities::*;
 pub mod io;
-use io::{output::*, input::*};
+use io::{input::*, output::*};
 
 const ROWS: usize = 20;
 const COLUMNS: usize = 10;
@@ -14,15 +16,16 @@ pub struct System {
     pub input: Input,
     pub data: Data,
     pub events: Vec<Gameloop_Events>,
+    pub score: u32,
 }
 
-pub enum Move{
+pub enum Move {
     Translate(Point),
     Rotate(i32),
     Drop,
 }
 
-pub enum Gameloop_Events{
+pub enum Gameloop_Events {
     Respawn,
     Collision,
     Death,
@@ -35,14 +38,17 @@ impl System {
             input: Input::new(),
             data: Data::new(),
             events: vec![],
+            score: 0,
         }
     }
 
-    pub fn check_move_timer(&mut self) {
+    pub fn check_move_timer(&mut self) -> bool {
         if self.data.move_timer.elapsed() > Duration::from_millis(1000) {
             self.reset_move_timer();
             self.try_move(Move::Translate(Point::from_pos(0.0, 1.0)));
+            return true;
         }
+        false
     }
 
     fn reset_move_timer(&mut self) {
@@ -53,7 +59,10 @@ impl System {
         let new_extent = match delta {
             Move::Translate(delta) => self.data.shape.to_world_pos(self.data.pos + *delta),
             Move::Rotate(delta) => self.data.shape.rotated(*delta).to_world_pos(self.data.pos),
-            Move::Drop => self.data.shape.to_world_pos(self.data.pos + Point::from_pos(0.0, 1.0)),
+            Move::Drop => self
+                .data
+                .shape
+                .to_world_pos(self.data.pos + Point::from_pos(0.0, 1.0)),
         };
         new_extent
     }
@@ -62,10 +71,13 @@ impl System {
         for point in extent.iter() {
             let x = point.x;
             let y = point.y;
-            if x >= COLUMNS as f32 || x < 0.0
-            || y >= ROWS as f32 || y < 0.0
-            || self.data.grid[y as usize][x as usize] > 0 {
-                return true
+            if x >= COLUMNS as f32
+                || x < 0.0
+                || y >= ROWS as f32
+                || y < 0.0
+                || self.data.grid[y as usize][x as usize] > 0
+            {
+                return true;
             }
         }
         false
@@ -90,7 +102,10 @@ impl System {
 
     fn check_for_tetris(&mut self) {
         let rows = self.find_rows_with_tetris();
-        if rows.len() == 0 {return};
+        if rows.len() == 0 {
+            return;
+        };
+        self.score += rows.len() as u32 * 2_i32.pow(2) as u32;
         let mut jump_length = 0;
         for row in (0..=rows[0]).rev() {
             if rows.contains(&row) {
@@ -100,7 +115,7 @@ impl System {
             self.data.grid[row + jump_length] = self.data.grid[row];
         }
         for row in 0..jump_length {
-            self.data.grid[row] = [0;COLUMNS];
+            self.data.grid[row] = [0; COLUMNS];
         }
     }
 
@@ -112,7 +127,7 @@ impl System {
                 _ => (),
             }
         } else {
-            if let Move::Translate(Point {x: 0.0, y:1.0}) = delta {
+            if let Move::Translate(Point { x: 0.0, y: 1.0 }) = delta {
                 self.reset_move_timer();
             }
             self.do_move(delta);
@@ -139,8 +154,8 @@ impl System {
 
     pub fn do_move(&mut self, delta: Move) {
         match delta {
-            Move::Translate(delta) => self.data.pos = self.data.pos +  delta,
-            Move::Rotate(delta) => {self.data.shape = self.data.shape.rotated(delta)},
+            Move::Translate(delta) => self.data.pos = self.data.pos + delta,
+            Move::Rotate(delta) => self.data.shape = self.data.shape.rotated(delta),
             Move::Drop => {
                 self.data.pos = self.data.pos + Point::from_pos(0.0, 1.0);
                 self.try_move(Move::Drop);
@@ -150,7 +165,7 @@ impl System {
 }
 
 pub struct Data {
-    grid: [[usize;COLUMNS];ROWS],
+    grid: [[usize; COLUMNS]; ROWS],
     pos: Point,
     shape: Shape,
     shapes: Vec<Shape>,
@@ -162,7 +177,7 @@ impl Data {
     fn new() -> Data {
         let shapes = Shape::shapes_from(include_str!("shapes.txt"));
         let mut data = Data {
-            grid: [[0;COLUMNS];ROWS],
+            grid: [[0; COLUMNS]; ROWS],
             pos: Point::from_pos(0.0, 0.0),
             shape: shapes[0].clone(),
             shapes,
