@@ -1,234 +1,227 @@
-use crossterm::{
-    cursor::{MoveTo, RestorePosition, SavePosition},
-    execute,
-};
-pub use rand::{thread_rng, Rng};
-use std::io::stdout;
-use std::ops::{Add, Sub};
-use std::time::{Duration, Instant};
+pub use rand::prelude::*;
+pub use std::time::{Duration, Instant};
 
-use crate::COLUMNS;
-
-pub fn display_score(score: u32) {
-    execute!(stdout(), SavePosition, MoveTo(0, 5)).unwrap();
-
-    print!("Score: {}", score);
-
-    execute!(stdout(), RestorePosition).unwrap();
+pub enum PlayerMove{
+    Translate(i32, i32),
+    Rotate(i32),
 }
 
-#[derive(Clone, Copy, Debug)]
-pub struct Point {
-    pub x: f32,
-    pub y: f32,
-}
-
-impl Point {
-    pub fn from_pos(x: f32, y: f32) -> Point {
-        Point { x, y }
-    }
-}
-
-impl Add for Point {
-    type Output = Point;
-
-    fn add(self, other: Self) -> Point {
-        Self {
-            x: self.x + other.x,
-            y: self.y + other.y,
+impl PlayerMove {
+    pub fn opposite(&self) -> PlayerMove {
+        match self {
+            PlayerMove::Rotate(angle) => PlayerMove::Rotate(-angle),
+            PlayerMove::Translate(dx, dy) => PlayerMove::Translate(-dx, -dy),
         }
     }
 }
 
-impl Sub for Point {
-    type Output = Point;
-
-    fn sub(self, other: Self) -> Point {
-        Self {
-            x: self.x - other.x,
-            y: self.y - other.y,
-        }
-    }
+pub enum Collision{
+    Wall,
+    Floor,
+    Block,
 }
 
 #[derive(Clone)]
 pub struct Shape {
-    extent: Vec<Point>,
-    center: Point,
+    extent: Vec<(f32, f32)>,
+    offset: (f32, f32),
 }
 
 impl Shape {
-    pub fn shapes_from(text: &str) -> Vec<Shape> {
+    pub fn parse_shapes(_text: &str) -> Vec<Shape> {
         vec![
             Shape {
                 extent: vec![
-                    Point::from_pos(-1.0, 0.0),
-                    Point::from_pos(0.0, 0.0),
-                    Point::from_pos(1.0, 0.0),
-                    Point::from_pos(-1.0, 1.0),
+                    (-2.0, -1.0),
+                    (-1.0, -1.0),
+                    (0.0, -1.0),
+                    (1.0, -1.0),
+                    (2.0, -1.0),
+                    (-2.0, 0.0),
+                    (-2.0, 1.0),
                 ],
-                center: Point::from_pos(1.0, 0.0),
+                offset: (2.0, 1.0),
             },
             Shape {
                 extent: vec![
-                    Point::from_pos(-1.0, 0.0),
-                    Point::from_pos(0.0, 0.0),
-                    Point::from_pos(1.0, 1.0),
-                    Point::from_pos(1.0, 0.0),
+                    (-2.0, 0.0),
+                    (0.0, 0.0),
+                    (1.0, 0.0),
+                    (2.0, 0.0),
                 ],
-                center: Point::from_pos(1.0, 0.0),
+                offset: (2.0, 0.0),
             },
             Shape {
                 extent: vec![
-                    Point::from_pos(-0.5, -0.5),
-                    Point::from_pos(0.5, -0.5),
-                    Point::from_pos(0.5, 0.5),
-                    Point::from_pos(-0.5, 0.5),
-                ],
-                center: Point::from_pos(0.5, 0.5),
+                    (-1.0, -1.0),
+                    (0.0, -1.0),
+                    (1.0, -1.0),
+                    (-1.0, -0.0),
+                    (1.0, -0.0),
+                    (-1.0, 1.0),
+                    (1.0, 1.0),
+                    ],
+                offset: (1.0, 1.0),
             },
             Shape {
                 extent: vec![
-                    Point::from_pos(-1.0, 0.0),
-                    Point::from_pos(0.0, 0.0),
-                    Point::from_pos(1.0, 0.0),
-                    Point::from_pos(2.0, 0.0),
-                ],
-                center: Point::from_pos(1.0, 0.0),
+                    (-1.0, -2.0),
+                    (0.0, -2.0),
+                    (1.0, -2.0),
+                    (-1.0, -1.0),
+                    (-1.0, 0.0),
+                    (0.0, 0.0),
+                    (1.0, 0.0),
+                    (1.0, 1.0),
+                    (-1.0, 2.0),
+                    (0.0, 2.0),
+                    (1.0, 2.0),
+                    ],
+                offset: (1.0, 1.0),
             },
             Shape {
                 extent: vec![
-                    Point::from_pos(-1.0, 0.0),
-                    Point::from_pos(0.0, 0.0),
-                    Point::from_pos(0.0, 1.0),
-                    Point::from_pos(1.0, 1.0),
-                ],
-                center: Point::from_pos(1.0, 0.0),
+                    (-1.0, 0.0),
+                    (0.0, 0.0),
+                    (1.0, 0.0),
+                    (-1.0, 1.0),
+                    ],
+                offset: (1.0, 0.0),
             },
             Shape {
                 extent: vec![
-                    Point::from_pos(-1.0, 1.0),
-                    Point::from_pos(0.0, 1.0),
-                    Point::from_pos(0.0, 0.0),
-                    Point::from_pos(1.0, 0.0),
-                ],
-                center: Point::from_pos(1.0, 0.0),
+                    (-1.0, 0.0),
+                    (0.0, 0.0),
+                    (1.0, 0.0),
+                    (1.0, 1.0),
+                    ],
+                offset: (1.0, 0.0),
             },
             Shape {
                 extent: vec![
-                    Point::from_pos(-1.0, 0.0),
-                    Point::from_pos(0.0, 0.0),
-                    Point::from_pos(1.0, 0.0),
-                    Point::from_pos(0.0, 1.0),
-                ],
-                center: Point::from_pos(1.0, 0.0),
+                    (-1.0, 0.0),
+                    (0.0, 0.0),
+                    (0.0, 1.0),
+                    (1.0, 0.0),
+                    ],
+                offset: (1.0, 0.0),
             },
             Shape {
                 extent: vec![
-                    Point::from_pos(-1.0, 1.0),
-                    Point::from_pos(0.0, 1.0),
-                    Point::from_pos(1.0, 1.0),
-                    Point::from_pos(0.0, 0.0),
-                    Point::from_pos(0.0, -1.0),
-                ],
-                center: Point::from_pos(0.0, 1.0),
+                    (-1.0, 0.0),
+                    (0.0, 0.0),
+                    (0.0, 1.0),
+                    (1.0, 1.0),
+                    ],
+                offset: (1.0, 0.0),
             },
             Shape {
                 extent: vec![
-                    Point::from_pos(-0.5, -0.5),
-                    Point::from_pos(0.5, -0.5),
-                    Point::from_pos(1.5, -0.5),
-                    Point::from_pos(-0.5, 0.5),
-                    Point::from_pos(0.5, 0.5),
-                ],
-                center: Point::from_pos(0.5, 0.5),
+                    (-1.0, 0.0),
+                    (0.0, 0.0),
+                    (0.0, -1.0),
+                    (1.0, -1.0),
+                    ],
+                offset: (1.0, 0.0),
             },
             Shape {
                 extent: vec![
-                    Point::from_pos(-0.5, -0.5),
-                    Point::from_pos(0.5, -0.5),
-                    Point::from_pos(1.5, 0.5),
-                    Point::from_pos(-0.5, 0.5),
-                    Point::from_pos(0.5, 0.5),
-                ],
-                center: Point::from_pos(0.5, 0.5),
+                    (-1.0, 0.0),
+                    (0.0, 0.0),
+                    (1.0, 0.0),
+                    (2.0, 0.0),
+                    ],
+                offset: (1.0, 0.0),
             },
             Shape {
                 extent: vec![
-                    Point::from_pos(-1.0, -1.0),
-                    Point::from_pos(0.0, -1.0),
-                    Point::from_pos(1.0, -1.0),
-                    Point::from_pos(-1.0, 0.0),
-                    Point::from_pos(1.0, 0.0),
-                    Point::from_pos(-1.0, 1.0),
-                    Point::from_pos(1.0, 1.0),
-                ],
-                center: Point::from_pos(1.0, 1.0),
+                    (-0.5, -0.5),
+                    (0.5, -0.5),
+                    (-0.5, 0.5),
+                    (0.5, 0.5),
+                    ],
+                offset: (0.5, 0.5),
             },
             Shape {
                 extent: vec![
-                    Point::from_pos(-1.0, 0.0),
-                    Point::from_pos(0.0, 0.0),
-                    Point::from_pos(1.0, 0.0),
-                    Point::from_pos(-1.0, 1.0),
-                    Point::from_pos(1.0, 1.0),
-                ],
-                center: Point::from_pos(1.0, 0.0),
-            },
-            Shape {
-                extent: vec![
-                    Point::from_pos(-2.0, 0.0),
-                    Point::from_pos(-1.0, 0.0),
-                    Point::from_pos(0.0, 0.0),
-                    Point::from_pos(1.0, 0.0),
-                    Point::from_pos(2.0, 0.0),
-                ],
-                center: Point::from_pos(2.0, 0.0),
+                    (-1.0, 0.0),
+                    (0.0, 0.0),
+                    (0.0, -1.0),
+                    (0.0, -2.0),
+                    (1.0, -1.0),
+                    ],
+                offset: (1.0, 1.0),
             },
         ]
     }
 
-    pub fn get_spawn_pos(&self) -> Point {
-        Point::from_pos((COLUMNS / 2 - self.center.x as usize) as f32 - 1.0, 0.0)
+    pub fn get_offset(&self) -> (f32, f32) {
+        (self.offset.0, self.offset.1)
     }
 
-    pub fn rotated(&self, delta: i32) -> Shape {
-        let mut extent: Vec<Point> = Vec::with_capacity(self.extent.len());
-        for point in self.extent.iter() {
-            if delta > 0 {
-                extent.push(Point::from_pos(-point.y, point.x));
-            }
-            if delta < 0 {
-                extent.push(Point::from_pos(point.y, -point.x));
-            }
-        }
-        Shape {
-            extent,
-            center: self.center,
+    pub fn rotate(&mut self, angle: i32) {
+        for (x, y) in self.extent.iter_mut() {
+            let (x2, y2) = match angle.rem_euclid(4) {
+                1 => (-*y, *x),
+                2 => (-*x, -*y),
+                3 => (*y, -*x),
+                _ => (*x, *y),
+            };
+            *x = x2;
+            *y = y2;
         }
     }
 
-    pub fn to_world_pos(&self, pos: Point) -> Vec<Point> {
-        let mut extent = Vec::with_capacity(self.extent.len());
-        for point in self.extent.iter() {
-            extent.push(pos + *point + self.center);
+    pub fn extent(&self) -> Vec<(i32, i32)> {
+        self.extent.clone().iter().map(|(x, y)| ((*x + self.offset.0) as i32, (*y + self.offset.1) as i32)).collect()
+    }
+}
+
+pub struct Player {
+    x: i32,
+    y: i32,
+    shape: Shape,
+    pub color: usize,
+}
+
+impl Player {
+    pub fn spawn(x:i32, y:i32,shape:Shape,color:usize) -> Self {
+        Self {
+            x,
+            y,
+            shape,
+            color,
         }
-        extent
+    }
+    
+    pub fn rotate(&mut self, angle: i32) {
+        self.shape.rotate(angle);
+    }
+
+    pub fn translate(&mut self, dx: i32, dy: i32) {
+        self.x += dx;
+        self.y += dy;
+    }
+
+    pub fn extent(&self) -> Vec<(i32, i32)> {
+        self.shape.extent().into_iter().map(|(x, y)| (x + self.x, y + self.y)).collect()
     }
 }
 
 pub struct Fps {
     time: Instant,
     frames: u64,
+    pub fps: f64,
     measurement_time: Duration,
 }
 
 impl Fps {
     pub fn new(measurement_time: Duration) -> Fps {
         Fps {
-            measurement_time,
             time: Instant::now(),
             frames: 0,
+            fps: 0.0,
+            measurement_time,
         }
     }
 
@@ -239,11 +232,8 @@ impl Fps {
 
     pub fn frame(&mut self) {
         self.frames += 1;
-        if self.time.elapsed() >= self.measurement_time {
-            println!(
-                "fps: {}",
-                (self.frames as u128 * 1000) / (self.time.elapsed().as_millis())
-            );
+        if self.time.elapsed() > self.measurement_time {
+            self.fps = (self.frames as f64)/self.time.elapsed().as_secs_f64();
             self.reset();
         }
     }
