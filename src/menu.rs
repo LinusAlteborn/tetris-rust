@@ -37,6 +37,11 @@ impl User {
     /// Output:
     ///
     /// A new instance of the struct User
+    /// 
+    /// Example:
+    /// 
+    /// add_user(String.from("Carl"))
+    /// # => User{name: "Carl", score: 0}
     fn add_user(name: String) -> Self {
         Self { name, score: 0 }
     }
@@ -68,6 +73,11 @@ impl Highscores {
     /// Output:
     ///
     /// A new instance of the struct Highscore
+    /// 
+    /// Example:
+    /// 
+    /// Highscore{users: [User{"Carl", score: 20}]}.append(User{"Tore": 50})
+    /// # => Highscore{users: [User{"Tore", score: 50} ,User{"Carl", score: 20}]}
     pub fn append(&mut self, user: User) -> Self {
         let length = self.users.len();
         if self
@@ -165,6 +175,10 @@ impl Settings {
                                         KeyCode::Char(event) => {
                                             if event.is_digit(10) {
                                                 break event.to_digit(10).unwrap();
+                                            }else{
+                                                disable_raw_mode().unwrap();
+                                                println!("You need to enter a number in the range 1-9");
+                                                enable_raw_mode().unwrap();
                                             }
                                         }
                                         _ => (),
@@ -177,7 +191,7 @@ impl Settings {
                         settings.difficulty = difficulty;
                     }
                     if settings_result == 2 {
-                        println!("Set color");
+                        println!("Set color\n\nPress r. for red\nPress b. for black");
                         enable_raw_mode().unwrap();
                         let color = loop {
                             if let Event::Key(key) = read().unwrap() {
@@ -217,6 +231,20 @@ impl Settings {
         }
     }
 
+    /// Load the local settings.json file for highscore and settings
+    ///
+    /// The json file is loaded or if it doesnt exsist an error is raised.
+    /// The json is parsed and then placed into a Highscore instant and a instant of settings
+    /// Which is then returned
+    ///
+    /// Output:
+    ///
+    /// A tuple of an instance of Highscore and an instance of Settings
+    /// 
+    /// Example:
+    /// 
+    /// load_json()
+    /// # => (Highscore{users: [User{"Tore", score: 50}, User{"Carl", score: 20}]}, Settings{difficulty: 4, color: 'b'})
     pub fn load_json() -> (Highscores, Self) {
         let content = fs::read_to_string("./src/settings.json").expect("error");
         let json = json::parse(&content).unwrap();
