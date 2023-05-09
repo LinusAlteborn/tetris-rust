@@ -1,198 +1,157 @@
-use std::time::{Duration, Instant};
+pub use std::time::{Duration, Instant};
 
 mod menu;
 mod utilities;
+use io::output::COLORS;
 
 pub use menu::*;
 pub use utilities::*;
+
 pub mod io;
-use io::{input::*, output::*};
 
-const ROWS: usize = 20;
-const COLUMNS: usize = 10;
+pub const ROWS: usize = 20;
+pub const COLUMNS: usize = 17;
+const SHAPES: &'static str = "";
 
-pub struct System {
-    pub output: Output,
-    pub input: Input,
-    pub data: Data,
-    pub events: Vec<Gameloop_Events>,
-    pub score: u32,
-}
-
-pub enum Move {
-    Translate(Point),
-    Rotate(i32),
-    Drop,
-}
-
-pub enum Gameloop_Events {
-    Respawn,
-    Collision,
-    Death,
-}
-
-impl System {
-    pub fn new() -> System {
-        System {
-            output: Output::new(),
-            input: Input::new(),
-            data: Data::new(),
-            events: vec![],
-            score: 0,
-        }
-    }
-
-    pub fn check_move_timer(&mut self) -> bool {
-        if self.data.move_timer.elapsed() > Duration::from_millis(1000) {
-            self.reset_move_timer();
-            self.try_move(Move::Translate(Point::from_pos(0.0, 1.0)));
-            return true;
-        }
-        false
-    }
-
-    fn reset_move_timer(&mut self) {
-        self.data.move_timer = Instant::now();
-    }
-
-    fn new_extent(&self, delta: &Move) -> Vec<Point> {
-        let new_extent = match delta {
-            Move::Translate(delta) => self.data.shape.to_world_pos(self.data.pos + *delta),
-            Move::Rotate(delta) => self.data.shape.rotated(*delta).to_world_pos(self.data.pos),
-            Move::Drop => self
-                .data
-                .shape
-                .to_world_pos(self.data.pos + Point::from_pos(0.0, 1.0)),
-        };
-        new_extent
-    }
-
-    fn collision_with_extent(&self, extent: &Vec<Point>) -> bool {
-        for point in extent.iter() {
-            let x = point.x;
-            let y = point.y;
-            if x >= COLUMNS as f32
-                || x < 0.0
-                || y >= ROWS as f32
-                || y < 0.0
-                || self.data.grid[y as usize][x as usize] > 0
-            {
-                return true;
-            }
-        }
-        false
-    }
-
-    pub fn collision(&self, delta: &Move) -> bool {
-        self.collision_with_extent(&self.new_extent(delta))
-    }
-
-    fn find_rows_with_tetris(&self) -> Vec<usize> {
-        let mut rows = Vec::new();
-        for point in self.data.shape.to_world_pos(self.data.pos) {
-            let y = point.y as usize;
-            if !rows.contains(&y) && !self.data.grid[y].contains(&0) {
-                rows.push(y);
-            }
-        }
-        rows.sort_unstable();
-        rows.reverse();
-        rows
-    }
-
-    fn check_for_tetris(&mut self) {
-        let rows = self.find_rows_with_tetris();
-        if rows.len() == 0 {
-            return;
-        };
-        self.score += rows.len() as u32 * 2_i32.pow(2) as u32;
-        let mut jump_length = 0;
-        for row in (0..=rows[0]).rev() {
-            if rows.contains(&row) {
-                jump_length += 1;
-                continue;
-            }
-            self.data.grid[row + jump_length] = self.data.grid[row];
-        }
-        for row in 0..jump_length {
-            self.data.grid[row] = [0; COLUMNS];
-        }
-    }
-
-    pub fn try_move(&mut self, delta: Move) {
-        let coll = self.collision(&delta);
-        if coll {
-            match delta {
-                Move::Translate(Point { x: 0.0, y: 1.0 }) | Move::Drop => self.respawn(),
-                _ => (),
-            }
-        } else {
-            if let Move::Translate(Point { x: 0.0, y: 1.0 }) = delta {
-                self.reset_move_timer();
-            }
-            self.do_move(delta);
-        }
-    }
-
-    fn stamp(&mut self) {
-        for point in self.data.shape.to_world_pos(self.data.pos) {
-            let x = point.x as usize;
-            let y = point.y as usize;
-            self.data.grid[y][x] = self.data.color;
-        }
-        self.check_for_tetris();
-    }
-
-    fn respawn(&mut self) {
-        self.stamp();
-        self.data.respawn();
-        self.reset_move_timer();
-        if self.collision(&Move::Translate(Point::from_pos(0.0, 0.0))) {
-            self.events.push(Gameloop_Events::Death);
-        }
-    }
-
-    pub fn do_move(&mut self, delta: Move) {
-        match delta {
-            Move::Translate(delta) => self.data.pos = self.data.pos + delta,
-            Move::Rotate(delta) => self.data.shape = self.data.shape.rotated(delta),
-            Move::Drop => {
-                self.data.pos = self.data.pos + Point::from_pos(0.0, 1.0);
-                self.try_move(Move::Drop);
-            }
-        }
-    }
-}
-
-pub struct Data {
-    grid: [[usize; COLUMNS]; ROWS],
-    pos: Point,
-    shape: Shape,
+pub struct GameState {
+    grid: [[usize;COLUMNS];ROWS],
+    player: Option<Player>,
     shapes: Vec<Shape>,
-    color: usize,
-    move_timer: Instant,
+    shape_order: Vec<usize>,
+    pub points: usize,
 }
 
-impl Data {
-    fn new() -> Data {
-        let shapes = Shape::shapes_from(include_str!("shapes.txt"));
-        let mut data = Data {
-            grid: [[0; COLUMNS]; ROWS],
-            pos: Point::from_pos(0.0, 0.0),
-            shape: shapes[0].clone(),
+impl GameState {
+    pub fn new() -> Self {
+        let shapes = Shape::parse_shapes(SHAPES);
+        Self {
+            grid: [[0;COLUMNS];ROWS],
+            player: None,
             shapes,
-            color: 0,
-            move_timer: Instant::now(),
-        };
-        data.respawn();
-        data
+            shape_order: vec![3,2,2,1,0],
+            points: 0,
+        }
     }
 
-    fn respawn(&mut self) {
-        let mut rng = thread_rng();
-        let shape_i = rng.gen_range(0..self.shapes.len());
-        self.shape = self.shapes[shape_i].clone();
-        self.pos = self.shape.get_spawn_pos();
-        self.color = rng.gen_range(1..COLORS.len());
+    pub fn give_points(&mut self, rows_cleared: usize) {
+        self.points += 100 * 2usize.pow(rows_cleared as u32);
+    }
+
+    fn fill_shape_order(&mut self) {
+        let mut rng = rand::thread_rng();
+        let mut nums: Vec<usize> = (0..self.shapes.len().clone()).collect();
+        nums.shuffle(&mut rng);
+        self.shape_order = nums;
+    }
+
+    fn next_shape_index(&mut self) -> usize {
+        match self.shape_order.pop() {
+            Some(shape) => shape,
+            None => {
+                self.fill_shape_order();
+                self.next_shape_index()
+            },
+        }
+    }
+
+    pub fn spawn(&mut self) {
+        let shape_index = self.next_shape_index();
+        let shape = self.shapes[shape_index].clone();
+        let (x, y) = ((COLUMNS as f32 / 2.0 - shape.get_offset().0) as i32, (0.0) as i32);
+        let color = thread_rng().gen_range(1..COLORS.len());
+        self.player = Some(Player::spawn(x, y, shape, color));
+    }
+
+    fn collision(&self) -> Option<Collision> {
+        if let Some(player) = &self.player {
+            for (x, y) in player.extent() {
+                if x < 0 { return Some(Collision::Wall) }
+                if x >= COLUMNS as i32 { return Some(Collision::Wall) }
+                if y >= ROWS as i32 { return Some(Collision::Floor) }
+                if y < 0 { continue; }
+                let x = x as usize;
+                let y = y as usize;
+                if self.grid[y][x] != 0 { return Some(Collision::Block); }
+            }
+            None
+        } else {
+            None
+        }
+    }
+
+    fn do_move(&mut self, player_move: &PlayerMove) {
+        if let Some(player) = &mut self.player {
+            match player_move {
+                PlayerMove::Translate(dx, dy) => player.translate(*dx, *dy),
+                PlayerMove::Rotate(angle) => player.rotate(*angle),
+            }
+        }
+    }
+
+    pub fn try_move(&mut self, player_move: PlayerMove) -> Option<Collision> {
+        self.do_move(&player_move);
+        let collision = self.collision();
+        if let Some(_) = collision {
+            self.do_move(&player_move.opposite());
+        }
+        collision
+    }
+
+    pub fn stamp(&mut self) {
+        if let Some(player) = &self.player {
+            for (x, y) in player.extent() {
+                let x = x as usize;
+                let y = y as usize;
+                if y >= ROWS || x >= COLUMNS { continue; }
+                self.grid[y][x] = player.color;
+            }
+        }
+    }
+
+    pub fn kill_player(&mut self) {
+        self.stamp();
+        let cleared_rows = self.find_cleared_rows();
+        if cleared_rows.len() > 0 {
+            self.give_points(cleared_rows.len());
+            self.fill_cleared_rows(cleared_rows);
+        }
+        self.player = None;
+    }
+
+    fn find_cleared_rows(&self) -> Vec<usize> {
+        let mut cleared_rows = Vec::new();
+        if let Some(player) = &self.player {
+            for (_, y) in player.extent() {
+                let y = y as usize;
+                if y >= ROWS { continue; }
+                if !self.grid[y].contains(&0) && !cleared_rows.contains(&y) {
+                    cleared_rows.push(y);
+                }
+            }
+        }
+        cleared_rows.sort_unstable();
+        cleared_rows
+    }
+
+    fn fill_cleared_rows(&mut self, cleared_rows: Vec<usize>) {
+        let mut jump_length = 1;
+        for y in (0..cleared_rows[0]).rev() {
+            if cleared_rows.contains(&y) {
+                jump_length += 1;
+            } else {
+                self.grid[y + jump_length] = self.grid[y];
+            }
+        }
+
+        for  y in 0..jump_length {
+            self.grid[y] = [0;COLUMNS];
+        }
+    }
+
+    pub fn alive(&self) -> bool {
+        match self.player {
+            Some(_) => true,
+            None => false,
+        }
     }
 }

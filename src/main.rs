@@ -1,42 +1,79 @@
-use std::time::Duration;
-use tetris::{io::input::InputEvent, *};
+use tetris::{io::{input::*, output::*}, *};
 
 fn main() {
     let mut user = Settings::start().unwrap().1;
-    let mut system = System::new();
+
+    let mut game = GameState::new();
+    let mut output = Output::new();
+
+    output.redraw(&game);
+
+    let mut respawn_timer = Instant::now().checked_sub(Duration::from_secs(999)).unwrap();
+    let mut fall_timer = Instant::now();
+    let mut redraw_timer = Instant::now();
+    
     let mut fps = Fps::new(Duration::from_millis(1000));
-    loop {
-        match system.input.poll() {
-            Some(event) => match event {
-                InputEvent::Left => system.try_move(Move::Translate(Point::from_pos(-1.0, 0.0))),
-                InputEvent::Right => system.try_move(Move::Translate(Point::from_pos(1.0, 0.0))),
-                InputEvent::Down => system.try_move(Move::Translate(Point::from_pos(0.0, 1.0))),
-                InputEvent::Rotate => system.try_move(Move::Rotate(1)),
-                InputEvent::Drop => system.try_move(Move::Drop),
+
+    'game_loop: loop {
+        if let Some(input) = input() {
+            match input {
+                InputEvent::Left => {
+                    game.try_move(PlayerMove::Translate(-1, 0));
+                    ()
+                },
+                InputEvent::Right => {
+                    game.try_move(PlayerMove::Translate(1, 0));
+                    ()
+                },
+                InputEvent::Rotate => {
+                    game.try_move(PlayerMove::Rotate(1));
+                    ()
+                },
+                InputEvent::Drop => {
+                    for _ in 0..ROWS {
+                        game.try_move(PlayerMove::Translate(0, 1));
+                    }
+                    game.kill_player();
+                    respawn_timer = Instant::now();
+                },
+                InputEvent::Down => {
+                    if let Some(_) = game.try_move(PlayerMove::Translate(0, 1)) {
+                        game.kill_player();
+                        respawn_timer = Instant::now();
+                    }
+                    fall_timer = Instant::now();
+                },
                 InputEvent::Quit => {
-                    println!("Buh, bye!");
-                    std::process::exit(0);
+                    println!("Buh, Bye!");
+                    break 'game_loop;
                 }
-            },
-            None => (),
-        }
-
-        system.check_move_timer();
-
-        for loop_event in system.events.drain(..) {
-            match loop_event {
-                Gameloop_Events::Death => {
-                    println!("You lose");
-                    std::process::exit(0);
-                }
-                _ => (),
             }
         }
 
-        system.output.update(&system.data);
+        if !game.alive() && respawn_timer.elapsed() > Duration::from_millis(500) {
+            game.spawn();
+            fall_timer = Instant::now();
+        }
 
-        user.score = system.score;
-        display_score(user.score);
+        if game.alive() && fall_timer.elapsed() > Duration::from_millis(1000) {
+            if let Some(_) = game.try_move(PlayerMove::Translate(0, 1)) {
+                game.kill_player();
+                respawn_timer = Instant::now();
+            }
+            fall_timer = Instant::now();
+        }
+
+        if redraw_timer.elapsed() > Duration::from_secs(3) {
+            output.redraw(&game);
+            redraw_timer = Instant::now();
+        } else {
+            output.draw(&game);
+        }
+
+        user.score = game.points as u32;
+
+        output.draw_score(format!("{points:0<5}", points=game.points));
+        output.draw_fps(format!("fps {fps:.0}", fps=fps.fps));
 
         fps.frame();
     }
