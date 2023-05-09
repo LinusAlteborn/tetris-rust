@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crossterm::event::{poll, read, Event};
 use crossterm::event::{KeyEvent, KeyEventKind, KeyCode};
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
+use crossterm::terminal::{enable_raw_mode};
 
 #[derive(Debug)]
 pub enum InputEvent {
