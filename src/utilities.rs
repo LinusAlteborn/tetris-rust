@@ -1,5 +1,6 @@
 pub use rand::prelude::*;
 pub use std::time::{Duration, Instant};
+use std::vec;
 
 // Denna enum delar upp spelar rörelser i två typer, rotering och flyttning.
 pub enum PlayerMove{
@@ -161,7 +162,7 @@ impl Shape {
                     (0.0, -1.0),
                     (1.0, -1.0),
                     (0.0, 0.0),
-                    (0.0, -1.0),
+                    (0.0, 1.0),
                     ],
                 offset: (1.0, 1.0),
             },
@@ -234,7 +235,7 @@ impl Shape {
                     (0.0, -1.0),
                     (1.0, -1.0),
                     (0.0, 0.0),
-                    (0.0, -1.0),
+                    (0.0, 1.0),
                     ],
                 offset: (1.0, 1.0),
             },
@@ -247,6 +248,26 @@ impl Shape {
                     (0.0, -1.0),
                     ],
                 offset: (1.0, 1.0),
+            },
+            Shape {
+                extent: vec![
+                    (-0.5, -0.5),
+                    (0.5, -0.5),
+                    (-0.5, 0.5),
+                    (0.5, 0.5),
+                    (1.5, 0.5)
+                    ],
+                offset: (0.5, 0.5),
+            },
+            Shape {
+                extent: vec![
+                    (-0.5, -0.5),
+                    (0.5, -0.5),
+                    (-0.5, 0.5),
+                    (0.5, 0.5),
+                    (1.5, -0.5)
+                    ],
+                offset: (0.5, 0.5),
             },
         ]
     }
