@@ -92,7 +92,7 @@ fn main() {
         user.score = game.points as u32;
 
         // målar poängen till skärmen
-        output.draw_score(format!("{points:0<5}", points=game.points));
+        output.draw_score(format!("{points:0>5}", points=game.points));
         // visar fps i vänstra hörnet
         output.draw_fps(format!("fps {fps:.0}", fps=fps.fps));
 
