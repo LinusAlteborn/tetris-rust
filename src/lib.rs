@@ -1,17 +1,14 @@
-
-
-mod menu;
-mod utilities;
+pub mod io;
 pub use io::{input::*, output::*};
 
+mod menu;
 pub use menu::*;
-pub use utilities::*;
 
-pub mod io;
+mod utilities;
+pub use utilities::*;
 
 pub const ROWS: usize = 20;
 pub const COLUMNS: usize = 16;
-const SHAPES: &'static str = "";
 
 /// This struct stores all data about the current state of the game.
 /// 
@@ -27,7 +24,7 @@ pub struct GameState {
 impl GameState {
     /// Create a new GameState with base values
     pub fn new() -> Self {
-        let shapes = Shape::parse_shapes(SHAPES);
+        let shapes = Shape::parse_shapes("");
         Self {
             grid: [[0;COLUMNS];ROWS],
             player: None,

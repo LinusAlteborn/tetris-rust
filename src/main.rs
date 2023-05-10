@@ -1,4 +1,4 @@
-use tetris::{io::{input::*, output::*}, *};
+use tetris::*;
 
 fn main() {
     let mut user = Settings::start().unwrap().1;
@@ -10,10 +10,12 @@ fn main() {
     // Eftersom inga block rört sig ännu kommer inte output att måla något. Vi måsta be den att måla bakgrunden genom denna metod.
     output.redraw(&game);
 
+    // timers
     let mut respawn_timer = Instant::now().checked_sub(Duration::from_secs(999)).unwrap();
     let mut fall_timer = Instant::now();
     let mut redraw_timer = Instant::now();
     
+    // fps räknare
     let mut fps = Fps::new(Duration::from_millis(1000));
 
     // Detta är själva loopen. Här använder vi alla våra hjälpmoduler med hjälpfunktioner och structs för att skriva spel logiken med konsis syntax.
@@ -23,6 +25,7 @@ fn main() {
     // 
     // Exakt hur vi delade upp här är inte lika viktigt som att vi delat upp projektet över huvudtaget. Tycker jag i alla fall.
     'game_loop: loop {
+        // hantera input event
         if let Some(input) = input() {
             match input {
                 InputEvent::Left => {
