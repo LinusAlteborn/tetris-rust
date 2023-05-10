@@ -7,12 +7,21 @@ pub use menu::*;
 mod utilities;
 pub use utilities::*;
 
+/// Set how tall the game screen is
 pub const ROWS: usize = 20;
+/// Set how wide the game screen is
 pub const COLUMNS: usize = 16;
 
 /// This struct stores all data about the current state of the game.
 /// 
 /// It also has usefull functions for manipulating the data and interacting with it.
+/// 
+/// fields:
+/// grid: [[usize;COLUMNS];ROWS] - a nested array with the gamaeboard grid
+/// player: Option<Player> - the moving block
+/// shapees: Vec<Shape> - A vec of all possible shapes
+/// shape_order: Vec<usize> - Saying which order the shapes should come
+/// points: usize - the amount of point accumelated
 pub struct GameState {
     grid: [[usize;COLUMNS];ROWS],
     player: Option<Player>,
@@ -23,6 +32,16 @@ pub struct GameState {
 
 impl GameState {
     /// Create a new GameState with base values
+    /// 
+    /// Return:
+    /// GameState{grid: [[usize;COLUMNS];ROWS], player: Option<Player>, shapes: Vec<Shape>, shape_order: Vec<usize>, point: usize} - The intlized state of the game
+    /// 
+    /// Example:
+    /// 
+    /// new()
+    /// #=> GameState{grid: [[], [], [], [], [], [], [], []], player: None, shapes: Shape {extent: vec![
+    /// (-1.0, 0.0), (0.0, 0.0), (1.0, 0.0), (1.0, -1.0),],offset: (1.0, 1.0),}, shape_order: vec![3,2,2,1,0],
+    /// point: 0}
     pub fn new() -> Self {
         let shapes = Shape::parse_shapes("");
         Self {
@@ -34,12 +53,29 @@ impl GameState {
         }
     }
 
-    /// This function decides the points given when clearing rows
+    /// This method decides the points given when clearing rows
+    /// 
+    /// Argument:
+    /// self: GameState - An instance of Gamestate
+    /// rows_cleared: usize - How many rows which has been cleared.
+    /// 
+    /// Exemple:
+    /// 
+    /// GameState{grid: [[], [], [], [], [], [], [], []], player: None, shapes: Shape {extent: vec![
+    /// (-1.0, 0.0), (0.0, 0.0), (1.0, 0.0), (1.0, -1.0),],offset: (1.0, 1.0),}, shape_order: vec![3,2,2,1,0],
+    /// point: 0}.give_points(2)
+    /// #=> GameState{grid: [[], [], [], [], [], [], [], []], player: None, shapes: Shape {extent: vec![
+    /// (-1.0, 0.0), (0.0, 0.0), (1.0, 0.0), (1.0, -1.0),],offset: (1.0, 1.0),}, shape_order: vec![3,2,2,1,0],
+    /// point: 400}
     fn give_points(&mut self, rows_cleared: usize) {
         self.points += 100 * 2usize.pow(rows_cleared as u32);
     }
 
     /// This function fills the shape_order vector whenever it has been emptied
+    /// 
+    /// Argument: 
+    /// self: GameState - An instance of Gamestate 
+    /// 
     fn fill_shape_order(&mut self) {
         let mut rng = rand::thread_rng();
         let mut nums: Vec<usize> = (0..self.shapes.len().clone()).collect();
@@ -47,7 +83,14 @@ impl GameState {
         self.shape_order = nums;
     }
 
-    /// This function "consumes" one number in the shape_order vector.
+    /// This method "consumes" one number in the shape_order vector.
+    /// 
+    /// Argument: 
+    /// self: GameState - An instance of Gamestate 
+    /// 
+    /// Return:
+    /// 
+    /// usize - the index of th next shape to use
     fn next_shape_index(&mut self) -> usize {
         match self.shape_order.pop() {
             Some(shape) => shape,
@@ -58,7 +101,15 @@ impl GameState {
         }
     }
 
-    /// This function spawnes a new player with a random shape and color. It tries to position the player block in the middle top of the screen.
+    /// This method spawnes a new player by gathering the next shapes index and then gathering the shape based on the index
+    /// Then getting the x and y cordinates of the shape and then the color
+    /// Then spawning the character
+    /// 
+    /// 
+    /// Argument: 
+    /// self: GameState - An instance of Gamestate 
+    /// 
+    /// 
     pub fn spawn(&mut self) {
         let shape_index = self.next_shape_index();
         let shape = self.shapes[shape_index].clone();
@@ -67,7 +118,16 @@ impl GameState {
         self.player = Some(Player::spawn(x, y, shape, color));
     }
 
-    /// This function checks for collisions, When it finds one. It returns with the type of collision that was found.
+    /// This method checks for collisions, When it finds one.
+    /// It returns a value from an Enum with what type of collission, if non were found it returns None
+    /// 
+    /// 
+    /// Argument: 
+    /// self: GameState - An instance of Gamestate 
+    /// 
+    /// Return:
+    /// 
+    /// Option<Collision> - Either a None or an enum value from Collision
     fn collision(&self) -> Option<Collision> {
         if let Some(player) = &self.player {
             for (x, y) in player.extent() {
@@ -86,6 +146,12 @@ impl GameState {
     }
 
     /// This function manipulates the player field to move it around
+    /// 
+    /// Argument: 
+    /// self: GameState - An instance of Gamestate 
+    /// player_move: &PlayerMove - An enum value of which direction to move
+    /// 
+    /// 
     fn do_move(&mut self, player_move: &PlayerMove) {
         if let Some(player) = &mut self.player {
             match player_move {
@@ -95,7 +161,14 @@ impl GameState {
         }
     }
 
-    /// This function tries to move or rotate the player. If it collides it goes back to it's original position and returns information about the collision.
+    /// This method tries to move or rotate the player. If it collides it goes back to it's original position and returns information about the collision.
+    /// 
+    /// Argument: 
+    /// self: GameState - An instance of Gamestate 
+    /// player_move: PlayerMove - An enum value of which direction to move
+    /// 
+    /// Return:
+    /// Option<Collision> - Either None or a Collision
     pub fn try_move(&mut self, player_move: PlayerMove) -> Option<Collision> {
         self.do_move(&player_move);
         let collision = self.collision();
