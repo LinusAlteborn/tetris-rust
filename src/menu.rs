@@ -34,7 +34,7 @@ impl User {
     ///
     /// name: A string is the users name
     ///
-    /// Output:
+    /// Return:
     ///
     /// A new instance of the struct User
     /// 
@@ -70,7 +70,7 @@ impl Highscores {
     /// self: which is the struct which is calling this method
     /// user: which holds the struct user that stores a score and a name
     ///
-    /// Output:
+    /// Return:
     ///
     /// A new instance of the struct Highscore
     /// 
@@ -237,7 +237,7 @@ impl Settings {
     /// The json is parsed and then placed into a Highscore instant and a instant of settings
     /// Which is then returned
     ///
-    /// Output:
+    /// Return:
     ///
     /// A tuple of an instance of Highscore and an instance of Settings
     /// 
@@ -262,6 +262,18 @@ impl Settings {
         return (high_scores, settings);
     }
 
+    /// Save memory to the local settings.json file that stores highscore and settings
+    ///
+    /// Highscore and settings is parsed as a json and then written into the settings.json file
+    /// 
+    /// Arguments:
+    ///
+    /// settings: A instance of Settings which holds the settings
+    /// high_scores: A instance of Highscore which holds the highscore
+    /// 
+    /// Example:
+    /// 
+    /// save_json(Highscore{users: [User{"Tore", score: 50}, User{"Carl", score: 20}]}, Settings{difficulty: 4, color: 'b'})
     pub fn save_json(settings: Self, high_scores: Highscores) {
         let mut data = object! {
             difficulty: settings.difficulty,
