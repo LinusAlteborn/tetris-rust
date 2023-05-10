@@ -7,8 +7,9 @@ use std::io::Write;
 
 /// Stores all of settings for the session
 ///
-/// The struct stores a difficulty which has the range of 1-9
-/// and a color which is a char
+/// Fields:
+/// difficulty: u32 - Stores a number between 0-9 which holds the difficulty level
+/// color: char - Holds a character which represents the color theme which is used
 
 #[derive(Clone, Copy)]
 pub struct Settings {
@@ -18,7 +19,9 @@ pub struct Settings {
 
 /// Stores a user with an assisted score and name
 ///
-/// The struct stores a name as a string and a number as u32
+/// Fields:
+/// name: String - Users name of the session
+/// score: u32 - The score the user gets
 #[derive(Clone)]
 pub struct User {
     name: String,
@@ -32,7 +35,7 @@ impl User {
     ///  
     /// Arguments:
     ///
-    /// name: A string is the users name
+    /// name: String - A string is the users name
     ///
     /// Return:
     ///
@@ -49,8 +52,8 @@ impl User {
 
 /// Stores the top 10 highest scores
 ///
-/// The struct stores a single vec which holds a users
-/// The users holds name and a score
+/// feilds:
+/// users: Vec<User> - A vec with multiple users, the vec should be orderd by biggest scores first
 #[derive(Clone)]
 pub struct Highscores {
     users: Vec<User>,
@@ -67,8 +70,8 @@ impl Highscores {
     ///
     /// Arguments:
     ///
-    /// self: which is the struct which is calling this method
-    /// user: which holds the struct user that stores a score and a name
+    /// self: Highscores - which is the struct which is calling this method
+    /// user: User - which holds the struct user that stores a score and a name
     ///
     /// Return:
     ///
@@ -268,8 +271,8 @@ impl Settings {
     /// 
     /// Arguments:
     ///
-    /// settings: A instance of Settings which holds the settings
-    /// high_scores: A instance of Highscore which holds the highscore
+    /// settings: Settings - An instance of Settings which holds the settings
+    /// high_scores: Highscores - An instance of Highscore which holds the highscore
     /// 
     /// Example:
     /// 
