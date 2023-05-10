@@ -39,7 +39,7 @@ impl User {
     ///
     /// Return:
     ///
-    /// A new instance of the struct User
+    /// User - A new instance of the struct User
     /// 
     /// Example:
     /// 
@@ -75,7 +75,7 @@ impl Highscores {
     ///
     /// Return:
     ///
-    /// A new instance of the struct Highscore
+    /// Settings - A new instance of the struct Highscore
     /// 
     /// Example:
     /// 
@@ -118,7 +118,7 @@ impl Settings {
     ///
     /// Return:
     ///
-    /// A crossterm::Result which holds a tuple of an instance of Settings and User
+    /// crossterm::Result<(Settings, User)> - A crossterm::Result which holds a tuple of an instance of Settings and User
     /// 
     /// Example:
     /// 
@@ -155,6 +155,7 @@ impl Settings {
                 io::stdin()
                     .read_line(&mut name)
                     .expect("failed to readline");
+                name.pop();
                 let user = User::add_user(name);
                 Self::save_json(settings, high_scores);
                 return Ok((settings.clone(), user));
@@ -216,6 +217,11 @@ impl Settings {
                                 match key.code {
                                     KeyCode::Char('r') => break 'r',
                                     KeyCode::Char('b') => break 'b',
+                                    KeyCode::Char(event) => {
+                                        disable_raw_mode().unwrap();
+                                        println!("You need to enter the character r or b");
+                                        enable_raw_mode().unwrap();
+                                    },
                                     _ => (),
                                 }
                             }
@@ -257,7 +263,7 @@ impl Settings {
     ///
     /// Return:
     ///
-    /// A tuple of an instance of Highscore and an instance of Settings
+    /// (Highscores, Self) - A tuple of an instance of Highscore and an instance of Settings
     /// 
     /// Example:
     /// 
