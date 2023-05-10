@@ -21,6 +21,13 @@ pub const COLUMNS: usize = 16;
 /// shapees: Vec<Shape> - A vec of all possible shapes
 /// shape_order: Vec<usize> - Saying which order the shapes should come
 /// points: usize - the amount of point accumelated
+/// 
+/// fields:
+/// grid: [[usize;COLUMNS];ROWS] - a nested array with the gamaeboard grid
+/// player: Option<Player> - the moving block
+/// shapees: Vec<Shape> - A vec of all possible shapes
+/// shape_order: Vec<usize> - Saying which order the shapes should come
+/// points: usize - the amount of point accumelated
 pub struct GameState {
     grid: [[usize;COLUMNS];ROWS],
     player: Option<Player>,
@@ -31,6 +38,16 @@ pub struct GameState {
 
 impl GameState {
     /// Create a new GameState with base values
+    /// 
+    /// Return:
+    /// GameState{grid: [[usize;COLUMNS];ROWS], player: Option<Player>, shapes: Vec<Shape>, shape_order: Vec<usize>, point: usize} - The intlized state of the game
+    /// 
+    /// Example:
+    /// 
+    /// new()
+    /// #=> GameState{grid: [[], [], [], [], [], [], [], []], player: None, shapes: Shape {extent: vec![
+    /// (-1.0, 0.0), (0.0, 0.0), (1.0, 0.0), (1.0, -1.0),],offset: (1.0, 1.0),}, shape_order: vec![3,2,2,1,0],
+    /// point: 0}
     /// 
     /// Return:
     /// GameState{grid: [[usize;COLUMNS];ROWS], player: Option<Player>, shapes: Vec<Shape>, shape_order: Vec<usize>, point: usize} - The intlized state of the game
@@ -66,11 +83,29 @@ impl GameState {
     /// #=> GameState{grid: [[], [], [], [], [], [], [], []], player: None, shapes: Shape {extent: vec![
     /// (-1.0, 0.0), (0.0, 0.0), (1.0, 0.0), (1.0, -1.0),],offset: (1.0, 1.0),}, shape_order: vec![3,2,2,1,0],
     /// point: 400}
+    /// This method decides the points given when clearing rows
+    /// 
+    /// Argument:
+    /// self: GameState - An instance of Gamestate
+    /// rows_cleared: usize - How many rows which has been cleared.
+    /// 
+    /// Exemple:
+    /// 
+    /// GameState{grid: [[], [], [], [], [], [], [], []], player: None, shapes: Shape {extent: vec![
+    /// (-1.0, 0.0), (0.0, 0.0), (1.0, 0.0), (1.0, -1.0),],offset: (1.0, 1.0),}, shape_order: vec![3,2,2,1,0],
+    /// point: 0}.give_points(2)
+    /// #=> GameState{grid: [[], [], [], [], [], [], [], []], player: None, shapes: Shape {extent: vec![
+    /// (-1.0, 0.0), (0.0, 0.0), (1.0, 0.0), (1.0, -1.0),],offset: (1.0, 1.0),}, shape_order: vec![3,2,2,1,0],
+    /// point: 400}
     fn give_points(&mut self, rows_cleared: usize) {
         self.points += 100 * 2usize.pow(rows_cleared as u32);
     }
 
     /// This function fills the shape_order vector whenever it has been emptied
+    /// 
+    /// Argument: 
+    /// self: GameState - An instance of Gamestate 
+    /// 
     /// 
     /// Argument: 
     /// self: GameState - An instance of Gamestate 
@@ -90,6 +125,14 @@ impl GameState {
     /// Return:
     /// 
     /// usize - the index of th next shape to use
+    /// This method "consumes" one number in the shape_order vector.
+    /// 
+    /// Argument: 
+    /// self: GameState - An instance of Gamestate 
+    /// 
+    /// Return:
+    /// 
+    /// usize - the index of th next shape to use
     fn next_shape_index(&mut self) -> usize {
         match self.shape_order.pop() {
             Some(shape) => shape,
@@ -100,9 +143,15 @@ impl GameState {
         }
     }
 
-    /// This method resets the player. It finds the next shape in the shape_order and uses this shapes offset to decide the x coordinate of the player. The color is randomly generated.
+    /// This method spawnes a new player by gathering the next shapes index and then gathering the shape based on the index
+    /// Then getting the x and y cordinates of the shape and then the color
+    /// Then spawning the character
     /// 
-    /// Argument 1(&mut self): GameState - A mutable instance of Gamestate 
+    /// 
+    /// Argument: 
+    /// self: GameState - An instance of Gamestate 
+    /// 
+    /// 
     pub fn spawn(&mut self) {
         let shape_index = self.next_shape_index();
         let shape = self.shapes[shape_index].clone();
