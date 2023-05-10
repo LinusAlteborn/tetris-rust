@@ -79,8 +79,8 @@ impl Highscores {
     /// 
     /// Example:
     /// 
-    /// Highscore{users: [User{"Carl", score: 20}]}.append(User{"Tore": 50})
-    /// # => Highscore{users: [User{"Tore", score: 50} ,User{"Carl", score: 20}]}
+    /// Highscore{users: [User{name: "Carl", score: 20}]}.append(User{name: "Tore": 50})
+    /// # => Highscore{users: [User{name: "Tore", score: 50}, User{name: "Carl", score: 20}]}
     pub fn append(&mut self, user: User) -> Self {
         let length = self.users.len();
         if self
@@ -109,6 +109,21 @@ impl Highscores {
 }
 
 impl Settings {
+    /// Intlize the start menu
+    ///
+    /// A menu is started which lets you change the settings, view the highscore and start the game
+    /// The setting menu is made of a sub menu of the main menu, the menu takes input by just pressing a letter or number.
+    /// Before the game starts, the user will have to input a name of the user and before the the game starts
+    /// the settings is saved to the json file.
+    ///
+    /// Return:
+    ///
+    /// A crossterm::Result which holds a tuple of an instance of Settings and User
+    /// 
+    /// Example:
+    /// 
+    /// start()
+    /// # => (Settings{color: 'c', difficulty: 5}, User{name: "Tore", score: 50})
     pub fn start() -> crossterm::Result<(Settings, User)> {
         let mut result = -1;
         let (high_scores, mut settings) = Self::load_json();
@@ -247,7 +262,7 @@ impl Settings {
     /// Example:
     /// 
     /// load_json()
-    /// # => (Highscore{users: [User{"Tore", score: 50}, User{"Carl", score: 20}]}, Settings{difficulty: 4, color: 'b'})
+    /// # => (Highscore{users: [User{name: "Tore", score: 50}, User{name: "Carl", score: 20}]}, Settings{difficulty: 4, color: 'b'})
     pub fn load_json() -> (Highscores, Self) {
         let content = fs::read_to_string("./src/settings.json").expect("error");
         let json = json::parse(&content).unwrap();
@@ -276,7 +291,7 @@ impl Settings {
     /// 
     /// Example:
     /// 
-    /// save_json(Highscore{users: [User{"Tore", score: 50}, User{"Carl", score: 20}]}, Settings{difficulty: 4, color: 'b'})
+    /// save_json(Highscore{users: [User{name: "Tore", score: 50}, User{name: "Carl", score: 20}]}, Settings{difficulty: 4, color: 'b'})
     pub fn save_json(settings: Self, high_scores: Highscores) {
         let mut data = object! {
             difficulty: settings.difficulty,
