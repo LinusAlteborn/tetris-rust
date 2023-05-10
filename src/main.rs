@@ -1,5 +1,7 @@
 use tetris::*;
 
+// förbättring: parsing av shapes frånm text-fil, simplifiering av kod och bättre struktur
+// bra sak: radflyttnigs algoritm
 fn main() {
     let mut user = Settings::start().unwrap().1;
 
