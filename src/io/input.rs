@@ -17,6 +17,16 @@ pub enum InputEvent {
 }
 
 /// Denna funktionen hanterar interaktionen mellan tangenttryck och event i spelet. Den konverterar alltså knapptryck till en rörelse/händelse i spelet.
+/// 
+/// Return: Option<InputEvent> - antingen en None, eller en Some(InputEvent) som beskriver ett spelares input
+/// 
+/// Exempel:
+///     input() -> None;
+///     input() -> Some(InputEvent::Drop);
+///     input() -> Some(InputEvent::Left);
+///     input() -> Some(InputEvent::Right);
+///     input() -> Some(InputEvent::Down);
+///     input() -> Some(InputEvent::Rotate);
 pub fn input() -> Option<InputEvent> {
     enable_raw_mode().unwrap();
     let event = if poll(Duration::ZERO).unwrap() {
