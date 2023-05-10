@@ -3,7 +3,7 @@ use std::io::stdout;
 use crossterm::{execute, terminal, Result};
 use crossterm::cursor::{Hide, MoveTo};
 use crossterm::terminal::{Clear, ClearType};
-use crossterm::style::{SetBackgroundColor, ResetColor, Color};
+use crossterm::style::{SetBackgroundColor, ResetColor, Color, SetForegroundColor};
 
 use crate::*;
 
@@ -15,6 +15,7 @@ const BACKGROUND: &'static str = include_str!("background.txt");
 enum Instruction {
     MoveTo(usize, usize),
     Color(Color),
+    TextColor(Color),
     Print(String),
 }
 
@@ -23,6 +24,7 @@ impl Instruction {
         match self {
             Instruction::MoveTo(x, y) => execute!(stdout(), MoveTo(*x as u16, *y as u16)),
             Instruction::Color(color) => execute!(stdout(), SetBackgroundColor(*color)),
+            Instruction::TextColor(color) => execute!(stdout(), SetForegroundColor(*color)),
             Instruction::Print(text) => {
                 print!("{:.BLOCK_WIDTH$}", text);
                 Ok(())
@@ -115,6 +117,7 @@ impl Output {
 
     fn instructions(&self, changes: Vec<(usize, usize)>) -> Vec<Instruction> {
         let mut instructions = Vec::new();
+        instructions.push(Instruction::TextColor(Color::Black));
         for (x, y) in changes {
             instructions.push(Instruction::Color(self.color_at(x, y)));
             for row in 0..BLOCK_HEIGHT {

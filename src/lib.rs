@@ -10,7 +10,7 @@ pub use utilities::*;
 pub mod io;
 
 pub const ROWS: usize = 20;
-pub const COLUMNS: usize = 17;
+pub const COLUMNS: usize = 16;
 const SHAPES: &'static str = "";
 
 pub struct GameState {
