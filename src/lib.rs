@@ -7,9 +7,8 @@ pub use menu::*;
 mod utilities;
 pub use utilities::*;
 
-/// Set how tall the game screen is
+/// Define the size of the play area
 pub const ROWS: usize = 20;
-/// Set how wide the game screen is
 pub const COLUMNS: usize = 16;
 
 /// This struct stores all data about the current state of the game.
@@ -101,15 +100,9 @@ impl GameState {
         }
     }
 
-    /// This method spawnes a new player by gathering the next shapes index and then gathering the shape based on the index
-    /// Then getting the x and y cordinates of the shape and then the color
-    /// Then spawning the character
+    /// This method resets the player. It finds the next shape in the shape_order and uses this shapes offset to decide the x coordinate of the player. The color is randomly generated.
     /// 
-    /// 
-    /// Argument: 
-    /// self: GameState - An instance of Gamestate 
-    /// 
-    /// 
+    /// Argument 1(&mut self): GameState - A mutable instance of Gamestate 
     pub fn spawn(&mut self) {
         let shape_index = self.next_shape_index();
         let shape = self.shapes[shape_index].clone();
@@ -118,16 +111,18 @@ impl GameState {
         self.player = Some(Player::spawn(x, y, shape, color));
     }
 
-    /// This method checks for collisions, When it finds one.
-    /// It returns a value from an Enum with what type of collission, if non were found it returns None
-    /// 
+    /// This method checks for collisions, if it finds one it returns a value from an Enum with what type of collission, if non were found it returns None
     /// 
     /// Argument: 
     /// self: GameState - An instance of Gamestate 
     /// 
-    /// Return:
+    /// Return: Option<Collision> - Either a None or an enum value from Collision
     /// 
-    /// Option<Collision> - Either a None or an enum value from Collision
+    /// Example:
+    ///     self.collision() -> Some(Collision::Wall)
+    ///     self.collision() -> Some(Collision::Floor)
+    ///     self.collision() -> Some(Collision::Block)
+    ///     self.collision() -> None
     fn collision(&self) -> Option<Collision> {
         if let Some(player) = &self.player {
             for (x, y) in player.extent() {
@@ -145,13 +140,10 @@ impl GameState {
         }
     }
 
-    /// This function manipulates the player field to move it around
+    /// This function manipulates the player field to move it around based on the type and values of the PlayerMove enum argument
     /// 
-    /// Argument: 
-    /// self: GameState - An instance of Gamestate 
-    /// player_move: &PlayerMove - An enum value of which direction to move
-    /// 
-    /// 
+    /// Argument 1: self: GameState - An instance of Gamestate 
+    /// Argument 2: player_move: &PlayerMove - An enum value of which direction to move
     fn do_move(&mut self, player_move: &PlayerMove) {
         if let Some(player) = &mut self.player {
             match player_move {
@@ -163,12 +155,10 @@ impl GameState {
 
     /// This method tries to move or rotate the player. If it collides it goes back to it's original position and returns information about the collision.
     /// 
-    /// Argument: 
-    /// self: GameState - An instance of Gamestate 
-    /// player_move: PlayerMove - An enum value of which direction to move
+    /// Argument 1: self: GameState - An instance of Gamestate 
+    /// Argument 2: player_move: PlayerMove - An enum value of which direction to move
     /// 
-    /// Return:
-    /// Option<Collision> - Either None or a Collision
+    /// Return: Option<Collision> - Either None or a Collision
     pub fn try_move(&mut self, player_move: PlayerMove) -> Option<Collision> {
         self.do_move(&player_move);
         let collision = self.collision();

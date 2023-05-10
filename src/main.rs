@@ -29,19 +29,10 @@ fn main() {
     'game_loop: loop {
         // hantera input event
         if let Some(input) = input() {
-            match input {
-                InputEvent::Left => {
-                    game.try_move(PlayerMove::Translate(-1, 0));
-                    ()
-                },
-                InputEvent::Right => {
-                    game.try_move(PlayerMove::Translate(1, 0));
-                    ()
-                },
-                InputEvent::Rotate => {
-                    game.try_move(PlayerMove::Rotate(1));
-                    ()
-                },
+            let _ = match input {
+                InputEvent::Left => {game.try_move(PlayerMove::Translate(-1, 0));},
+                InputEvent::Right => {game.try_move(PlayerMove::Translate(1, 0));},
+                InputEvent::Rotate => {game.try_move(PlayerMove::Rotate(1));},
                 InputEvent::Drop => {
                     for _ in 0..ROWS {
                         game.try_move(PlayerMove::Translate(0, 1));
@@ -60,10 +51,10 @@ fn main() {
                     println!("Buh, Bye!");
                     break 'game_loop;
                 }
-            }
+            };
         }
 
-        // respawna
+        // respawn om tillräckligt med tid har passerat och spelaren är död
         if !game.alive() && respawn_timer.elapsed() > Duration::from_millis(500) {
             game.spawn();
             if let Some(_) = game.try_move(PlayerMove::Translate(0, 0)) {
