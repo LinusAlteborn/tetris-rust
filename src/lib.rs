@@ -1,8 +1,8 @@
-pub use std::time::{Duration, Instant};
+
 
 mod menu;
 mod utilities;
-use io::output::COLORS;
+pub use io::{input::*, output::*};
 
 pub use menu::*;
 pub use utilities::*;
@@ -13,6 +13,9 @@ pub const ROWS: usize = 20;
 pub const COLUMNS: usize = 16;
 const SHAPES: &'static str = "";
 
+/// This struct stores all data about the current state of the game.
+/// 
+/// It also has usefull functions for manipulating the data and interacting with it.
 pub struct GameState {
     grid: [[usize;COLUMNS];ROWS],
     player: Option<Player>,
@@ -22,6 +25,7 @@ pub struct GameState {
 }
 
 impl GameState {
+    /// Create a new GameState with base values
     pub fn new() -> Self {
         let shapes = Shape::parse_shapes(SHAPES);
         Self {
@@ -33,10 +37,12 @@ impl GameState {
         }
     }
 
-    pub fn give_points(&mut self, rows_cleared: usize) {
+    /// This function decides the points given when clearing rows
+    fn give_points(&mut self, rows_cleared: usize) {
         self.points += 100 * 2usize.pow(rows_cleared as u32);
     }
 
+    /// This function fills the shape_order vector whenever it has been emptied
     fn fill_shape_order(&mut self) {
         let mut rng = rand::thread_rng();
         let mut nums: Vec<usize> = (0..self.shapes.len().clone()).collect();
@@ -44,6 +50,7 @@ impl GameState {
         self.shape_order = nums;
     }
 
+    /// This function "consumes" one number in the shape_order vector.
     fn next_shape_index(&mut self) -> usize {
         match self.shape_order.pop() {
             Some(shape) => shape,
@@ -54,6 +61,7 @@ impl GameState {
         }
     }
 
+    /// This function spawnes a new player with a random shape and color. It tries to position the player block in the middle top of the screen.
     pub fn spawn(&mut self) {
         let shape_index = self.next_shape_index();
         let shape = self.shapes[shape_index].clone();
@@ -62,6 +70,7 @@ impl GameState {
         self.player = Some(Player::spawn(x, y, shape, color));
     }
 
+    /// This function checks for collisions, When it finds one. It returns with the type of collision that was found.
     fn collision(&self) -> Option<Collision> {
         if let Some(player) = &self.player {
             for (x, y) in player.extent() {
@@ -79,6 +88,7 @@ impl GameState {
         }
     }
 
+    /// This function manipulates the player field to move it around
     fn do_move(&mut self, player_move: &PlayerMove) {
         if let Some(player) = &mut self.player {
             match player_move {
@@ -88,6 +98,7 @@ impl GameState {
         }
     }
 
+    /// This function tries to move or rotate the player. If it collides it goes back to it's original position and returns information about the collision.
     pub fn try_move(&mut self, player_move: PlayerMove) -> Option<Collision> {
         self.do_move(&player_move);
         let collision = self.collision();
@@ -97,7 +108,8 @@ impl GameState {
         collision
     }
 
-    pub fn stamp(&mut self) {
+    /// This function Goes through all the positions the player extends to and sets the grid[y][x] at these positions to the players color.
+    fn stamp(&mut self) {
         if let Some(player) = &self.player {
             for (x, y) in player.extent() {
                 let x = x as usize;
@@ -108,6 +120,7 @@ impl GameState {
         }
     }
 
+    /// This function stamps all the players blocks onto the grid. It also checks for cleared rows and gives points for these. The player field is left at None indicating the the player is gone.
     pub fn kill_player(&mut self) {
         self.stamp();
         let cleared_rows = self.find_cleared_rows();
@@ -118,6 +131,7 @@ impl GameState {
         self.player = None;
     }
 
+    /// This function finds all rows that have been cleared. It only checks the rows which the player is occupying to save processing time.
     fn find_cleared_rows(&self) -> Vec<usize> {
         let mut cleared_rows = Vec::new();
         if let Some(player) = &self.player {
@@ -133,9 +147,13 @@ impl GameState {
         cleared_rows
     }
 
+    /// This is a nice, optimized algorithm for moving down the rows after some have been cleared.
+    /// 
+    /// It iterates over all rows and displaces them by the jump_height variable. the jump_height variable increments by one every time we iterate on a cleared row.
     fn fill_cleared_rows(&mut self, cleared_rows: Vec<usize>) {
         let mut jump_length = 1;
-        for y in (0..cleared_rows[0]).rev() {
+        if cleared_rows.len() == 0 { return; }
+        for y in (0..*cleared_rows.last().unwrap()).rev() {
             if cleared_rows.contains(&y) {
                 jump_length += 1;
             } else {
@@ -148,6 +166,7 @@ impl GameState {
         }
     }
 
+    /// This is something called a getter. It's a way for users of the GameStruct to access the structs private fields
     pub fn alive(&self) -> bool {
         match self.player {
             Some(_) => true,

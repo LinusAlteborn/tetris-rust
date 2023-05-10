@@ -4,7 +4,9 @@ use crossterm::event::{poll, read, Event};
 use crossterm::event::{KeyEvent, KeyEventKind, KeyCode};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 
-#[derive(Debug)]
+/// En abstraction av alla olika input som jag kan få
+/// 
+/// Varje typ är en agering som jag kan ta i spelet. Jag kan rotera, flytta mig i många olika håll, jag kan snabbfalla och jag kan avsluta spelet
 pub enum InputEvent {
     Rotate,
     Down,
@@ -14,9 +16,10 @@ pub enum InputEvent {
     Quit,
 }
 
+/// Denna funktionen hanterar interaktionen mellan tangenttryck och event i spelet. Den konverterar alltså knapptryck till en rörelse/händelse i spelet.
 pub fn input() -> Option<InputEvent> {
     enable_raw_mode().unwrap();
-    let event = if poll(Duration::from_millis(0)).unwrap() {
+    let event = if poll(Duration::ZERO).unwrap() {
         match read().unwrap() {
             Event::Key(KeyEvent{kind: KeyEventKind::Press, code, ..}) => match code {
                 KeyCode::Char(' ') | KeyCode::Backspace => Some(InputEvent::Drop),

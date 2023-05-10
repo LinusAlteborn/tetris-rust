@@ -12,6 +12,9 @@ const BLOCK_WIDTH: usize = 4;
 const BLOCK_HEIGHT: usize = 2;
 const BACKGROUND: &'static str = include_str!("background.txt");
 
+/// Detta är en representation av kommandon som skickas till terminalen
+/// 
+/// Varje typ av denna enum representerar ett execute!() kommand. och typerna i dessa (String, usize...) är anpassade fär att vara lättanvände i mitt syfte.
 enum Instruction {
     MoveTo(usize, usize),
     Color(Color),
@@ -20,6 +23,7 @@ enum Instruction {
 }
 
 impl Instruction {
+    /// Denna funktion utför en instruktion och ger tillbaka (returnar) med antingen ett Ok() som betyder att den lyckades eller ett std::io::Error med ett meddelande om varför det inte fungerade.
     fn perform(&self) -> Result<()> {
         match self {
             Instruction::MoveTo(x, y) => execute!(stdout(), MoveTo(*x as u16, *y as u16)),
@@ -33,6 +37,11 @@ impl Instruction {
     }
 }
 
+/// Denna struct samlar data för dem visuella delarna och hanterar interaktionen med terminalen
+/// 
+/// Den har även passande hjälpfunktioner för att manipulera denna data. Detta är mesta dels för att optimisera spelet.
+/// 
+/// Att göra många execute!() calls är dyrt för prestanda. därför håller vi endast koll på förändringar, alltså vi spara hur spelet ser ut och ser vilka block som har förändrats. Sedan målar vi endast dom blocken. Detta är varför vi behöver data i denna struct, för att se förändringar.
 pub struct Output {
     grid: [[usize;COLUMNS];ROWS],
     background: [[char;BLOCK_WIDTH * COLUMNS];BLOCK_HEIGHT * ROWS],
@@ -41,6 +50,7 @@ pub struct Output {
 }
 
 impl Output {
+    /// Denna funktion skapar ett nytt output instans med grund värden
     pub fn new() -> Self {
         let (width, _height) = terminal::size().unwrap();
         let offset = Self::offset(width);
@@ -53,6 +63,7 @@ impl Output {
         }
     }
 
+    /// Denna funktion läser filen background.txt och formatterar denna för att se fin ut. D.V.S. Vi centrerar texten och delar upp den i block för att vara lättare att jobba med.
     fn parse_background(background_str: &'static str) -> [[char;BLOCK_WIDTH * COLUMNS];BLOCK_HEIGHT * ROWS] {
         let mut background = [[' ';BLOCK_WIDTH * COLUMNS];BLOCK_HEIGHT * ROWS];
         let mut widths = Vec::new();
@@ -74,6 +85,7 @@ impl Output {
         background
     }
 
+    /// Denna funktion jämför grid hos output och gamestate och hittar vilka block positioner som har ändrade värden.
     fn changes(&mut self, data: &GameState) -> Vec<(usize, usize)> {
         let next_grid = Self::next_grid(data);
         let mut changed_blocks = Vec::new();
@@ -88,6 +100,7 @@ impl Output {
         changed_blocks
     }
 
+    /// Denna funktion tar data över grid och spelare för att bestämma vilka värden output grid skal ha. Spelaren syns inte om man inte gör detta då den inte är en del av gamestatets grid förräns den placerats.
     fn next_grid(data: &GameState) -> [[usize;COLUMNS];ROWS] {
         let mut grid = data.grid;
         if let Some(player) = &data.player {
@@ -102,6 +115,7 @@ impl Output {
         grid
     }
 
+    /// Denna funktion tar ett x och y värde och bestämmer vilken färg denna cell skal ha. Denna är ansvarig för rutnätet som bakgrunden har.
     fn color_at(&self, x: usize, y: usize) -> Color {
         let value = self.grid[y][x];
         if value == 0 {
@@ -115,6 +129,7 @@ impl Output {
         }
     }
 
+    /// Denna funktionen tar en vector över alla celler som ändrats konverterar detta till instruktioner som terminalen skal utföra.
     fn instructions(&self, changes: Vec<(usize, usize)>) -> Vec<Instruction> {
         let mut instructions = Vec::new();
         instructions.push(Instruction::TextColor(Color::Black));
@@ -132,6 +147,7 @@ impl Output {
         instructions
     }
 
+    /// Denna funktion kombinderar bakgrund och ui. Den ser till att UI alltid ligger över bakgrunder.
     fn compose_back_and_fore(background: &[char], foreground: &[char]) -> [char;BLOCK_WIDTH] {
         let mut composed = [' ';BLOCK_WIDTH];
         for i in 0..BLOCK_WIDTH {
@@ -144,6 +160,7 @@ impl Output {
         composed
     }
 
+    /// Denna funktion manipulerar foreground fältet för att skriva text med spelarens poäng. Den beräknar positionen i 2D arrayen som den skal ändra för att det skal bli korrekt.
     pub fn draw_score(&mut self, score: String) {
         for (x, char) in score.chars().enumerate() {
             let x = (COLUMNS * BLOCK_WIDTH - score.len()) / 2 + x;
@@ -153,6 +170,7 @@ impl Output {
         }
     }
     
+    /// Denna funktion är samma som draw_score fast den sitter i nedre vänstra hörnet. Kan vara bra att ha en generel funktion eftersom att dessa funktioner är väldigt lika.
     pub fn draw_fps(&mut self, fps: String) {
         for (x, char) in fps.chars().enumerate() {
             let x = x;
@@ -162,21 +180,25 @@ impl Output {
         }
     }
 
+    /// Denna funktion hitta förändringar, skapar instructioner för dessa och utför dem. D.V.S. den updaterar block som förändrats.
     pub fn draw(&mut self, data: &GameState) {
         let changes = self.changes(data);
         let instructions = self.instructions(changes);
         self.execute(instructions);
     }
 
+    /// Denna funktionen målar om alla block. Till skillnad från draw() så kollar den inte efter skillnad, utan målar om allting. Denna är användbar om något glitchat, t.ex. om man gör fönstret för litet och spelet buggar ut.
     pub fn redraw(&mut self, data: &GameState) {
         self.grid = [[usize::MAX;COLUMNS];ROWS];
         self.draw(data);
     }
     
+    /// Denna funktion använder bredden på skärmen för att beräkna ett offset så allting hamnar i mitten på skärmen.
     fn offset(width: u16) -> (usize, usize) {
         ((width as usize - (COLUMNS * BLOCK_WIDTH + 2)) / 2, 0)
     }
 
+    /// Denna funktion itererar genom en vector av instructioner och utför dessa. Den ställer tillbaka terminalen till dess grundvärden efter den är färdig.
     fn execute(&self, instructions: Vec<Instruction>) {
         for instruction in instructions {
             instruction.perform().unwrap();
