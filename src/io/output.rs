@@ -132,7 +132,7 @@ impl Output {
     /// Denna funktionen tar en vector över alla celler som ändrats konverterar detta till instruktioner som terminalen skal utföra.
     fn instructions(&self, changes: Vec<(usize, usize)>) -> Vec<Instruction> {
         let mut instructions = Vec::new();
-        instructions.push(Instruction::TextColor(Color::Black));
+        instructions.push(Instruction::TextColor(Color::Grey));
         for (x, y) in changes {
             instructions.push(Instruction::Color(self.color_at(x, y)));
             for row in 0..BLOCK_HEIGHT {
